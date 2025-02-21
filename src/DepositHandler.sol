@@ -4,13 +4,17 @@ pragma solidity ^0.8.0;
 import "./DepositVault.sol";
 import "./DataStore.sol";
 import "./MarketFactory.sol";
+import "./MarketHandler.sol";
 
 contract DepositHandler {
+    address public dataStore;
     address public depositVault;
+    address public marketHandler;
     address public wnt;
 
     event DepositCreated(uint256 key, Deposit deposit);
     event DepositCancelled(uint256 key);
+    event DepositExecuted(uint256 key);
 
     error InsufficientExecutionFee();
     error MarketDoesNotExist();
@@ -37,13 +41,15 @@ contract DepositHandler {
         uint256 initialShortTokenAmount;
     }
 
-    constructor(address _depositVault, address _wnt) {
+    constructor(address _dataStore, address _depositVault, address _marketHandler, address _wnt) {
+        dataStore = _dataStore;
         depositVault = _depositVault;
+        marketHandler = _marketHandler;
         wnt = _wnt;
     }
 
-    function createDeposit(address _dataStore, address _account, CreateDepositParams memory _params) external {
-        MarketFactory.Market memory market = DataStore(_dataStore).getMarket(keccak256(abi.encodePacked(_params.initialLongToken, _params.initialShortToken)));
+    function createDeposit(address _account, CreateDepositParams memory _params) external returns (uint256) {
+        MarketFactory.Market memory market = DataStore(dataStore).getMarket(keccak256(abi.encodePacked(_params.initialLongToken, _params.initialShortToken)));
 
         if (market.marketToken == address(0)) {
             revert MarketDoesNotExist();
@@ -70,7 +76,7 @@ contract DepositHandler {
             revert InsufficientExecutionFee();
         }
 
-        uint256 nonce = DataStore(_dataStore).getNonce(DataStore.TransactionType.Deposit);
+        uint256 nonce = DataStore(dataStore).getNonce(DataStore.TransactionType.Deposit);
         
         Deposit memory depositData = Deposit(
             _account,
@@ -84,30 +90,32 @@ contract DepositHandler {
             initialShortTokenAmount
         );
 
-        DataStore(_dataStore).setDeposit(
+        DataStore(dataStore).setDeposit(
             nonce,
             depositData
         );
 
-        DataStore(_dataStore).incrementNonce(DataStore.TransactionType.Deposit);
+        DataStore(dataStore).incrementNonce(DataStore.TransactionType.Deposit);
 
         emit DepositCreated(nonce, depositData);
+
+        return nonce;
     }
 
-    function cancelDeposit(address _dataStore, uint256 _key) external {
-        Deposit memory deposit = DataStore(_dataStore).getDeposit(_key);
+    function cancelDeposit( uint256 _key) external {
+        Deposit memory deposit = DataStore(dataStore).getDeposit(_key);
 
         if(deposit.initialLongTokenAmount > 0) {    
-            DepositVault(depositVault).transferOut(deposit.initialLongToken, deposit.initialLongTokenAmount);
+            DepositVault(depositVault).transferOut(deposit.initialLongToken, deposit.receiver, deposit.initialLongTokenAmount);
         }
 
         if(deposit.initialShortTokenAmount > 0) {
-            DepositVault(depositVault).transferOut(deposit.initialShortToken, deposit.initialShortTokenAmount);
+            DepositVault(depositVault).transferOut(deposit.initialShortToken, deposit.receiver, deposit.initialShortTokenAmount);
         }
 
-        DepositVault(depositVault).transferOut(wnt, deposit.executionFee);
+        DepositVault(depositVault).transferOut(wnt, deposit.receiver, deposit.executionFee);
 
-        DataStore(_dataStore).setDeposit(_key, Deposit({
+        DataStore(dataStore).setDeposit(_key, Deposit({
             account: address(0),
             receiver: address(0),
             uiFeeReceiver: address(0),
@@ -120,5 +128,39 @@ contract DepositHandler {
         }));
 
         emit DepositCancelled(_key);
+    }
+
+    function executeDeposit(uint256 _key) external {
+        Deposit memory deposit = DataStore(dataStore).getDeposit(_key);
+
+        if(deposit.initialLongTokenAmount > 0) {   
+            DepositVault(depositVault).transferOut(deposit.initialLongToken, deposit.marketToken, deposit.initialLongTokenAmount);
+        }
+
+        if(deposit.initialShortTokenAmount > 0) {
+            DepositVault(depositVault).transferOut(deposit.initialShortToken, deposit.marketToken, deposit.initialShortTokenAmount);
+        }
+
+        DepositVault(depositVault).transferOut(wnt, msg.sender, deposit.executionFee);
+        MarketHandler(marketHandler).handleDeposit(
+            deposit.receiver,
+            deposit.marketToken,
+            deposit.initialLongTokenAmount,
+            deposit.initialShortTokenAmount
+        );
+
+        DataStore(dataStore).setDeposit(_key, Deposit({
+            account: address(0),
+            receiver: address(0),
+            uiFeeReceiver: address(0),
+            marketToken: address(0),
+            initialLongToken: address(0),
+            initialShortToken: address(0),
+            executionFee: 0,
+            initialLongTokenAmount: 0,
+            initialShortTokenAmount: 0
+        }));
+
+        emit DepositExecuted(_key);
     }
 }

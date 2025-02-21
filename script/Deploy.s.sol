@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
+import "../src/Oracle.sol";
 import "../src/Router.sol";
 import "../src/MarketFactory.sol";
 import "../src/DataStore.sol";
@@ -15,11 +16,28 @@ contract DeployScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address wnt = vm.envAddress("WETH_ADDRESS");
-        
+        uint256 minBlockInterval = vm.envUint("MIN_BLOCK_INTERVAL");
+        uint256 maxBlockInterval = vm.envUint("MAX_BLOCK_INTERVAL");
+
         vm.startBroadcast(deployerPrivateKey);
+
+        // Deploy oracle
+        Oracle oracle = new Oracle(
+            minBlockInterval,
+            maxBlockInterval
+        );
 
         // Deploy core storage
         DataStore dataStore = new DataStore();
+
+        // Deploy market factory
+        MarketFactory marketFactory = new MarketFactory(address(dataStore));
+
+        // Deploy market handler
+        MarketHandler marketHandler = new MarketHandler(
+            address(dataStore),
+            address(oracle)
+        );
 
         // Deploy vaults
         OrderVault orderVault = new OrderVault();
@@ -32,12 +50,11 @@ contract DeployScript is Script {
         );
         
         DepositHandler depositHandler = new DepositHandler(
+            address(dataStore),
             address(depositVault),
+            address(marketHandler),
             address(wnt)
         );
-
-        // Deploy market factory
-        MarketFactory marketFactory = new MarketFactory(address(dataStore));
 
         // Deploy router
         Router router = new Router(
@@ -48,6 +65,7 @@ contract DeployScript is Script {
             address(wnt)
         );
 
+        console.log("ORACLE_ADDRESS=%s", address(oracle));
         console.log("DATA_STORE_ADDRESS=%s", address(dataStore));
         console.log("ORDER_VAULT_ADDRESS=%s", address(orderVault));
         console.log("DEPOSIT_VAULT_ADDRESS=%s", address(depositVault));

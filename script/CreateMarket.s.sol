@@ -18,7 +18,6 @@ contract CreateMarketScript is Script {
             shortToken
         );
 
-
         console.log("MARKET_ADDRESS=%s", address(marketToken));
         
         vm.stopBroadcast();
