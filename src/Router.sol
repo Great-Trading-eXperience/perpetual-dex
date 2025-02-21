@@ -40,7 +40,7 @@ contract Router is Multicall {
     }
 
     function createDeposit(DepositHandler.CreateDepositParams memory _params) external {
-       DepositHandler(depositHandler).createDeposit(dataStore, msg.sender, _params);
+       DepositHandler(depositHandler).createDeposit(msg.sender, _params);
     }
 
     function cancelDeposit(uint256 _key) external {
@@ -50,7 +50,7 @@ contract Router is Multicall {
             revert NotOwner();
         }
 
-        DepositHandler(depositHandler).cancelDeposit(dataStore, _key);
+        DepositHandler(depositHandler).cancelDeposit(_key);
     }
 
     function createOrder(OrderHandler.CreateOrderParams memory _params) external {

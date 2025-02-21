@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Script.sol";
 import "../src/Router.sol";
 import "../src/DepositHandler.sol";
+import "../src/MarketFactory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract CreateDepositScript is Script {
@@ -15,45 +16,60 @@ contract CreateDepositScript is Script {
         address usdc = vm.envAddress("USDC_ADDRESS");
         address depositVault = vm.envAddress("DEPOSIT_VAULT_ADDRESS");
         
+        uint256 executionFee = 1 * 10**6;
+
         vm.startBroadcast(deployerPrivateKey);
 
-        // First mint some tokens for testing
-        MockToken(weth).mint(vm.addr(deployerPrivateKey), 10 * 10**18);
+        // Mint both tokens
+        MockToken(weth).mint(vm.addr(deployerPrivateKey), 10 * 10 ** 18);
+        MockToken(usdc).mint(vm.addr(deployerPrivateKey), 3000 * 10 ** 18);
 
-        // Then approve tokens
+        // Approve both tokens to router
         IERC20(weth).approve(router, type(uint256).max);
-        
-        // Create deposit parameters
-        DepositHandler.CreateDepositParams memory params = DepositHandler.CreateDepositParams({
-            receiver: vm.addr(deployerPrivateKey),
-            uiFeeReceiver: address(0),
-            market: market,
-            initialLongToken: weth,
-            initialShortToken: usdc,
-            minMarketTokens: 0,
-            executionFee: 1 * 10**6
-        });
+        IERC20(usdc).approve(router, type(uint256).max);
+
+        // Create deposit params
+        DepositHandler.CreateDepositParams memory params = DepositHandler
+            .CreateDepositParams({
+                receiver: vm.addr(deployerPrivateKey),
+                uiFeeReceiver: address(0),
+                market: market,
+                initialLongToken: weth,
+                initialShortToken: usdc,
+                minMarketTokens: 0,
+                executionFee: executionFee
+            });
 
         // Prepare multicall data
-        bytes[] memory multicallData = new bytes[](2);
+        bytes[] memory data = new bytes[](4);
 
-        // Send long token (WETH)
-        multicallData[0] = abi.encodeWithSelector(
-            Router.sendTokens.selector,
-            weth,
-            depositVault,
-            1 * 10**18
+        // 1. Transfer WNT for execution fee
+        data[0] = abi.encodeCall(
+            Router.sendWnt,
+            (address(depositVault), executionFee)
         );
 
-        // Create deposit
-        multicallData[1] = abi.encodeWithSelector(
-            Router.createDeposit.selector,
-            params
+        // 2. Transfer long token (WETH)
+        data[1] = abi.encodeCall(
+            Router.sendTokens,
+            (weth, address(depositVault), 1 * 10 ** 18)
         );
 
-        Router(router).multicall(multicallData);
+        // 3. Transfer short token (USDC)
+        data[2] = abi.encodeCall(
+            Router.sendTokens,
+            (usdc, address(depositVault), 3000 * 10 ** 18)
+        );
 
-        console.log("Deposit created successfully");
+        // 4. Create deposit
+        data[3] = abi.encodeCall(Router.createDeposit, (params));
+
+        // Execute multicall
+        Router(router).multicall(data);
+
+        uint256 balanceOfMarketToken = IERC20(market).balanceOf(vm.addr(deployerPrivateKey));
+
+        console.log("Balance of market token: %s", balanceOfMarketToken);
 
         vm.stopBroadcast();
     }
@@ -61,4 +77,4 @@ contract CreateDepositScript is Script {
 
 interface MockToken {
     function mint(address account, uint256 amount) external;
-} 
+}

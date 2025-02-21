@@ -4,15 +4,27 @@
 
 forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-## 2. Create Market
+# 2. Set Oracle
+
+forge script script/AddTokensToOracle.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+# 3. Set initial prices
+
+forge script script/UpdateTokensPriceOnOracle.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 4. Create Market
 
 forge script script/CreateMarket.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-## 3. Create Deposit
+## 5. Create Deposit
 
 forge script script/CreateDeposit.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-## 4. Create Order
+## 6. Execute Deposit
+
+forge script script/ExecuteDeposit.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 7. Create Order
 
 forge script script/CreateOrder.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 

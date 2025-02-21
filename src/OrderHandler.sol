@@ -17,6 +17,7 @@ contract OrderHandler {
     error OrderTypeCannotBeCreated(uint256 orderType);
     error InitialCollateralTokenDoesNotExist();
     error InsufficientWntAmountForExecutionFee(uint256 initialCollateralDeltaAmount, uint256 executionFee);
+    error OnlySelf();
 
     enum OrderType {
         MarketIncrease,
@@ -229,5 +230,39 @@ contract OrderHandler {
         }));
 
         emit OrderCancelled(_key);
+    }
+
+    function executeOrder(address _dataStore, uint256 _key) external {
+        uint256 startingGas = gasleft();
+
+        Order memory order = DataStore(_dataStore).getOrder(_key);
+       
+        // Gas validation
+       
+        // Order execution
+    }
+
+    function _executeOrder(uint256 _key, Order memory _order, address _keeper) external {
+        if(msg.sender != address(this)) {
+            revert OnlySelf();
+        }
+
+        // Non empty order validation
+        // BaseOrderUtils.validateNonEmptyOrder(params.order);
+        
+        // Trigger price validation
+        // BaseOrderUtils.validateOrderTriggerPrice(
+        //     params.contracts.oracle,
+        //     params.market.indexToken,
+        //     params.order.orderType(),
+        //     params.order.triggerPrice(),
+        //     params.order.isLong()
+        // );
+
+        // Valid from time validation
+        // BaseOrderUtils.validateOrderValidFromTime(
+        //     params.order.orderType(),
+        //     params.order.validFromTime()
+        // );
     }
 }
