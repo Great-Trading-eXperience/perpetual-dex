@@ -4,14 +4,18 @@ pragma solidity ^0.8.0;
 import "./MarketFactory.sol";
 import "./DepositHandler.sol";
 import "./OrderHandler.sol";
+import "./PositionHandler.sol";
 
 contract DataStore {
     mapping(bytes32 => MarketFactory.Market) public markets;
     mapping(address => bytes32) public marketKeys;
+    mapping(address => mapping(address => uint256)) public openInterest;
     
     mapping(uint256 => DepositHandler.Deposit) public deposits;
 
     mapping(uint256 => OrderHandler.Order) public orders;
+
+    mapping(bytes32 => PositionHandler.Position) public positions;
 
     mapping(TransactionType => uint256) public transactionNonces;
 
@@ -19,7 +23,7 @@ contract DataStore {
         Deposit,
         Withdraw,
         Order,
-        CloseOrder
+        Position
     }
 
     function setMarket(bytes32 key, MarketFactory.Market memory market) external {
@@ -38,6 +42,14 @@ contract DataStore {
         return markets[key];
     }
 
+    function setOpenInterest(address market, address collateralToken, uint256 amount) external {
+        openInterest[market][collateralToken] = amount;
+    }
+
+    function getOpenInterest(address market, address collateralToken) external view returns (uint256) {
+        return openInterest[market][collateralToken];
+    }
+
     function setDeposit(uint256 key, DepositHandler.Deposit memory deposit) external {
         deposits[key] = deposit;
     }
@@ -52,6 +64,14 @@ contract DataStore {
 
     function getOrder(uint256 key) external view returns (OrderHandler.Order memory) {
         return orders[key];
+    }
+
+    function setPosition(bytes32 key, PositionHandler.Position memory position) external {
+        positions[key] = position;
+    }
+
+    function getPosition(bytes32 key) external view returns (PositionHandler.Position memory) {
+        return positions[key];
     }
 
     function getNonce(TransactionType _transactionType) external view returns (uint256) {

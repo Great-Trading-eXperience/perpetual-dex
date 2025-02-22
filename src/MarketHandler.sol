@@ -9,12 +9,25 @@ import "./Oracle.sol";
 contract MarketHandler {
     address public immutable dataStore;
     address public immutable oracle;
+    address public positionHandler;
 
     error MarketDoesNotExist();
+    error OnlyPositionHandler();
+    error PositionHandlerAlreadySet();
+    
+    event OpenInterestSet(address market, address token, uint256 amount);
 
     constructor(address _dataStore, address _oracle) {
         dataStore = _dataStore;
         oracle = _oracle;
+    }
+
+    function setPositionHandler(address _positionHandler) external {
+        if(positionHandler != address(0)) {
+            revert PositionHandlerAlreadySet();
+        }
+
+        positionHandler = _positionHandler;
     }
 
     struct MarketState {
@@ -23,6 +36,8 @@ contract MarketHandler {
         uint256 shortTokenAmount;
         address longToken;
         address shortToken;
+        uint256 longTokenOpenInterest;
+        uint256 shortTokenOpenInterest;
     }
 
     function handleDeposit(
@@ -75,7 +90,27 @@ contract MarketHandler {
         return longTokenUsd + shortTokenUsd;
     }
 
-    function getMarketState(address market) internal view returns (MarketState memory) {
+    function setOpenInterest(address market, address token, uint256 amount) public {
+        if (msg.sender != positionHandler) {
+            revert OnlyPositionHandler();
+        }
+        
+        DataStore(dataStore).setOpenInterest(market, token, amount);
+
+        emit OpenInterestSet(market, token, amount);
+    }
+
+    function getOpenInterest(address _marketToken, address _token) external view returns (uint256) {
+        MarketState memory state = getMarketState(_marketToken);
+        
+        if (_token == state.longToken) {
+            return state.longTokenOpenInterest;
+        } else {
+            return state.shortTokenOpenInterest;
+        }
+    }
+
+    function getMarketState(address market) public view returns (MarketState memory) {
         bytes32 marketKey = DataStore(dataStore).getMarketKey(
             market
         );
@@ -86,12 +121,17 @@ contract MarketHandler {
 
         MarketFactory.Market memory marketData = DataStore(dataStore).getMarket(marketKey);
 
+        uint256 longTokenOpenInterest = DataStore(dataStore).getOpenInterest(market, marketData.longToken);  
+        uint256 shortTokenOpenInterest = DataStore(dataStore).getOpenInterest(market, marketData.shortToken);
+
         return MarketState({
             marketTokenSupply: MarketToken(marketData.marketToken).totalSupply(),
             longTokenAmount: IERC20(marketData.longToken).balanceOf(marketData.marketToken),
             shortTokenAmount: IERC20(marketData.shortToken).balanceOf(marketData.marketToken),
             longToken: marketData.longToken,
-            shortToken: marketData.shortToken
+            shortToken: marketData.shortToken,
+            longTokenOpenInterest: longTokenOpenInterest,
+            shortTokenOpenInterest: shortTokenOpenInterest
         });
     }
 }

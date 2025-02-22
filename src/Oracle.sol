@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "forge-std/console.sol";
 
 contract Oracle is Ownable, ReentrancyGuard {
     using ECDSA for bytes32;
@@ -60,7 +61,10 @@ contract Oracle is Ownable, ReentrancyGuard {
 
     // View functions
     function getPrice(address token) external view returns (uint256) {
+        console.log("getting price for token", token);
+
         Price memory price = prices[token];
+        console.log("price.value", price.value);
         if (price.value == 0) revert InvalidPrice();
         if (block.timestamp - price.timestamp > maxPriceAge[token]) revert StalePrice();
         return price.value;
@@ -92,7 +96,7 @@ contract Oracle is Ownable, ReentrancyGuard {
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
             SignedPrice calldata priceData = signedPrices[i];
-            
+
             validateBlockInterval(priceData.blockNumber, prices[token].blockNumber);
             validatePrice(token, priceData.price, priceData.timestamp);
             validateSignature(token, priceData);
@@ -122,10 +126,11 @@ contract Oracle is Ownable, ReentrancyGuard {
 
     function validatePrice(address token, uint256 newPrice, uint256 timestamp) internal view {
         Price memory currentPrice = prices[token];
+        
         // Restore stale price checks
         if (timestamp <= currentPrice.timestamp) revert StalePrice();
         if (block.timestamp - timestamp > maxPriceAge[token]) revert StalePrice();
-       
+        
         // Price deviation check
         if (currentPrice.value != 0) {
             uint256 priceDiff;

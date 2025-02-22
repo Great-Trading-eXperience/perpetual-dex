@@ -16,7 +16,9 @@ contract CreateDepositScript is Script {
         address usdc = vm.envAddress("USDC_ADDRESS");
         address depositVault = vm.envAddress("DEPOSIT_VAULT_ADDRESS");
         
-        uint256 executionFee = 1 * 10**6;
+        uint256 executionFee = 1 * 10 ** 9;
+        uint256 longTokenAmount = 1000 * 10 ** 18;
+        uint256 shortTokenAmount = 3000 * 10 ** 18;
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -42,7 +44,6 @@ contract CreateDepositScript is Script {
 
         // Prepare multicall data
         bytes[] memory data = new bytes[](4);
-
         // 1. Transfer WNT for execution fee
         data[0] = abi.encodeCall(
             Router.sendWnt,
@@ -52,13 +53,13 @@ contract CreateDepositScript is Script {
         // 2. Transfer long token (WETH)
         data[1] = abi.encodeCall(
             Router.sendTokens,
-            (weth, address(depositVault), 1 * 10 ** 18)
+            (weth, address(depositVault), longTokenAmount)
         );
 
         // 3. Transfer short token (USDC)
         data[2] = abi.encodeCall(
             Router.sendTokens,
-            (usdc, address(depositVault), 3000 * 10 ** 18)
+            (usdc, address(depositVault), shortTokenAmount)
         );
 
         // 4. Create deposit
