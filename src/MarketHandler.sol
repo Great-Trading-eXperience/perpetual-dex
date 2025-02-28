@@ -16,6 +16,9 @@ contract MarketHandler {
     error PositionHandlerAlreadySet();
     
     event OpenInterestSet(address market, address token, uint256 amount);
+    event CumulativeFundingFeeSet(address market, uint256 amount);
+    event FundingFeeSet(address market, int256 amount);
+    event GlobalCumulativeFundingFeeSet(address market, int256 amount);
 
     constructor(address _dataStore, address _oracle) {
         dataStore = _dataStore;
@@ -108,6 +111,20 @@ contract MarketHandler {
         } else {
             return state.shortTokenOpenInterest;
         }
+    }
+
+    function setGlobalCumulativeFundingFee(address market, int256 amount) public {
+        if (msg.sender != positionHandler) {
+            revert OnlyPositionHandler();
+        }
+        
+        DataStore(dataStore).setGlobalCumulativeFundingFee(market, amount);
+
+        emit GlobalCumulativeFundingFeeSet(market, amount);
+    }
+
+    function getGlobalCumulativeFundingFee(address market) external view returns (int256) {
+        return DataStore(dataStore).getGlobalCumulativeFundingFee(market);
     }
 
     function getMarketState(address market) public view returns (MarketState memory) {

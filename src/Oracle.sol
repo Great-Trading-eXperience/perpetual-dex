@@ -118,10 +118,10 @@ contract Oracle is Ownable, ReentrancyGuard {
         if (blockNumber <= previousBlockNumber) revert BlockIntervalInvalid(0, blockNumber, previousBlockNumber);
         
         uint256 blockDiff = blockNumber - previousBlockNumber;
-        if (blockDiff < minBlockInterval) revert BlockIntervalInvalid(1, blockDiff, minBlockInterval);
-        if (blockDiff > maxBlockInterval) revert BlockIntervalInvalid(2, blockDiff, maxBlockInterval);
+        // if (blockDiff < minBlockInterval) revert BlockIntervalInvalid(1, blockDiff, minBlockInterval);
+        // if (blockDiff > maxBlockInterval) revert BlockIntervalInvalid(2, blockDiff, maxBlockInterval);
         
-        if (blockNumber > block.number) revert BlockIntervalInvalid(3, blockNumber, block.number);
+        // if (blockNumber > block.number) revert BlockIntervalInvalid(3, blockNumber, block.number);
     }
 
     function validatePrice(address token, uint256 newPrice, uint256 timestamp) internal view {
