@@ -32,7 +32,11 @@ forge script script/CreateOrder.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_
 
 forge script script/ExecuteOrder.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-## 9. Cancel Order
+## 9. Liquidate Position
+
+forge script script/LiquidatePosition.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 10. Cancel Order
 
 forge script script/CancelOrder.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 

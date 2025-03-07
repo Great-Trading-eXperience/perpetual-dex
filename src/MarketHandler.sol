@@ -7,16 +7,25 @@ import "./MarketToken.sol";
 import "./Oracle.sol";
 
 contract MarketHandler {
-    address public immutable dataStore;
-    address public immutable oracle;
+    address public dataStore;
+    address public oracle;
     address public positionHandler;
+
+    uint256 public MAX_FUNDING_RATE = 1e15;
+    uint256 public MIN_FUNDING_RATE = 1e13; 
+    uint256 public BASE_FUNDING_RATE = 1e14;
+
+    uint256 public MAX_OPEN_INTEREST = 8000;
+    uint256 public BASE_BORROWING_RATE = 100;
+    uint256 public OPTIMAL_UTILIZATION_RATE = 9000;
+    uint256 public SLOPE_BELOW_OPTIMAL = 50;
+    uint256 public SLOPE_ABOVE_OPTIMAL = 400;
 
     error MarketDoesNotExist();
     error OnlyPositionHandler();
     error PositionHandlerAlreadySet();
     
     event OpenInterestSet(address market, address token, uint256 amount);
-    event CumulativeFundingFeeSet(address market, uint256 amount);
     event FundingFeeSet(address market, int256 amount);
     event GlobalCumulativeFundingFeeSet(address market, int256 amount);
 
@@ -125,6 +134,20 @@ contract MarketHandler {
 
     function getGlobalCumulativeFundingFee(address market) external view returns (int256) {
         return DataStore(dataStore).getGlobalCumulativeFundingFee(market);
+    }
+
+    function setFundingFee(address market, int256 amount) public {
+        if (msg.sender != positionHandler) {
+            revert OnlyPositionHandler();
+        }
+        
+        DataStore(dataStore).setFundingFee(market, amount);
+
+        emit FundingFeeSet(market, amount);
+    }
+
+    function getFundingFee(address market) external view returns (int256) {
+        return DataStore(dataStore).getFundingFee(market);
     }
 
     function getMarketState(address market) public view returns (MarketState memory) {

@@ -35,6 +35,7 @@ contract OrderHandler {
     error TriggerPriceIsLessThanCollateralTokenPrice();
     error PriceIsGreaterThanAcceptablePrice();
     error OrderIsNotValid();
+    error OrderTypeCannotBeExecuted(uint256 orderType);
     
     enum OrderType {
         MarketIncrease,
@@ -42,8 +43,8 @@ contract OrderHandler {
         MarketDecrease,
         LimitDecrease,
         StopLossDecrease,
-        Liquidation,
-        StopIncrease
+        StopIncrease,
+        Liquidation
     }
 
     struct CreateOrderParams {
@@ -249,7 +250,7 @@ contract OrderHandler {
 
         MarketHandler.MarketState memory marketState = MarketHandler(marketHandler).getMarketState(order.marketToken);
 
-        uint256 sizeInTokens = order.sizeDeltaUsd / collateralTokenPrice;
+        uint256 sizeInTokens = order.sizeDeltaUsd / collateralTokenPrice * (10 ** ERC20(order.initialCollateralToken).decimals());
 
         if (
             order.orderType == OrderType.MarketIncrease ||
@@ -312,8 +313,10 @@ contract OrderHandler {
                 _sizeInTokens
             );
 
-           MarketToken(_order.marketToken).transferOut(_order.account, _order.initialCollateralToken, _sizeInTokens);
-        }
+            MarketToken(_order.marketToken).transferOut(_order.account, _order.initialCollateralToken, _sizeInTokens);
+        } else  {
+            revert OrderTypeCannotBeExecuted(uint256(_order.orderType));
+        } 
 
         OrderVault(orderVault).transferOut(wnt, _keeper, _order.executionFee);
        

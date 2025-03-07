@@ -27,15 +27,15 @@ contract UpdateOraclePrices is Script {
         address signer = vm.addr(signerPrivateKey);
         
         // Create signed price update
-       // Set initial prices (3000 USDC per 1 WETH)
+        // Set initial prices (3000 USDC per 1 WETH)
         address[] memory tokens = new address[](2);
         tokens[0] = weth;
         tokens[1] = usdc; 
 
         Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](2);
         
-        uint256 wethPrice = 3000 * 10 ** 18;
-        uint256 usdcPrice = 1 * 10 ** 18;
+        uint256 wethPrice = 3000 * 1e18;
+        uint256 usdcPrice = 1 * 1e18;
 
         uint256 timestamp = block.timestamp;
         uint256 blockNumber = block.number;

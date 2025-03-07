@@ -46,6 +46,7 @@ contract DeployScript is Script {
         // Deploy position handler
         PositionHandler positionHandler = new PositionHandler(
             address(dataStore),
+            address(oracle),
             address(marketHandler)
         );
 
@@ -76,7 +77,8 @@ contract DeployScript is Script {
             address(depositHandler),
             address(0), // withdrawHandler - to be added later
             address(orderHandler),
-            address(wnt)
+            address(wnt),
+            address(positionHandler)
         );
 
         console.log("ORACLE_ADDRESS=%s", address(oracle));

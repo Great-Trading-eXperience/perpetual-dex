@@ -9,8 +9,8 @@ import "./PositionHandler.sol";
 contract DataStore {
     mapping(bytes32 => MarketFactory.Market) public markets;
     mapping(address => bytes32) public marketKeys;
-    mapping(address => int256) public cumulativeFundingFees;
-    mapping(address => int256) public fundingFees;
+    mapping(address => int256) public cumulativeFundingFee;
+    mapping(address => int256) public fundingFee;
     mapping(address => mapping(address => uint256)) public openInterest;
     
     mapping(uint256 => DepositHandler.Deposit) public deposits;
@@ -53,19 +53,19 @@ contract DataStore {
     }
 
     function setGlobalCumulativeFundingFee(address market, int256 amount) external {
-        cumulativeFundingFees[market] = amount;
+        cumulativeFundingFee[market] = amount;
     }
 
     function getGlobalCumulativeFundingFee(address market) external view returns (int256) {
-        return cumulativeFundingFees[market];
+        return cumulativeFundingFee[market];
     }
 
     function setFundingFee(address market, int256 amount) external {
-        fundingFees[market] = amount;
+        fundingFee[market] = amount;
     }
 
     function getFundingFee(address market) external view returns (int256) {
-        return fundingFees[market];
+        return fundingFee[market];
     }
 
     function setDeposit(uint256 key, DepositHandler.Deposit memory deposit) external {

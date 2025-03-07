@@ -7,6 +7,7 @@ import "./Multicall.sol";
 import "./DataStore.sol";
 import "./DepositHandler.sol";
 import "./OrderHandler.sol";
+import "./PositionHandler.sol";
 
 contract Router is Multicall {
     address public wnt;
@@ -14,6 +15,7 @@ contract Router is Multicall {
     address public depositHandler;
     address public withdrawHandler;
     address public orderHandler;
+    address public positionHandler;
 
     error NotOwner();
 
@@ -22,13 +24,15 @@ contract Router is Multicall {
         address _depositHandler, 
         address _withdrawHandler, 
         address _orderHandler,
-        address _wnt
+        address _wnt,
+        address _positionHandler
     ) {
         dataStore = _dataStore;
         depositHandler = _depositHandler;
         withdrawHandler = _withdrawHandler;
         orderHandler = _orderHandler;
         wnt = _wnt;
+        positionHandler = _positionHandler;
     }
 
     function sendWnt(address _receiver, uint256 _amount) external {
@@ -59,5 +63,9 @@ contract Router is Multicall {
 
     function cancelOrder(uint256 _key) external {
         OrderHandler(orderHandler).cancelOrder(dataStore, _key);
+    }
+
+    function liquidatePosition(PositionHandler.LiquidatePositionParams memory _params) external {
+        PositionHandler(positionHandler).liquidatePosition(_params, msg.sender);
     }
 }

@@ -136,7 +136,8 @@ contract DepositTest is Test {
             address(depositHandler),
             address(0), // withdrawHandler (not needed for this test)
             address(0), // orderHandler (not needed for this test)
-            wnt
+            wnt,
+            address(0) // positionHandler (not needed for this test)
         );
         
         // Update approvals to use router instead of vault

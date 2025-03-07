@@ -18,10 +18,10 @@ contract CreateOrderScript is Script {
         // Approve WETH spending
         IERC20(weth).approve(router, type(uint256).max);
 
-        uint256 executionFee = 1 * 10 ** 9;
-        uint256 sizeDeltaUsd = 100 * 10**18;
-        uint256 initialCollateralDeltaAmount = 1 * 10**18;
-         uint256 triggerPrice = 3000 * 10 ** 18;
+        uint256 executionFee = 1 * 10e9;
+        uint256 initialCollateralDeltaAmount = 1 * 1e18;
+        uint256 sizeDeltaUsd = initialCollateralDeltaAmount * 3000 * 10;
+        uint256 triggerPrice = 3000 * 1e18;
         uint256 acceptablePrice = (triggerPrice * 110) / 100;
 
         // Create order parameters
@@ -50,7 +50,7 @@ contract CreateOrderScript is Script {
         multicallData[0] = abi.encodeWithSelector(
             Router.sendWnt.selector,
             vm.envAddress("ORDER_VAULT_ADDRESS"),
-            1 * 10**18
+            executionFee
         );
 
         // Send collateral token
@@ -58,7 +58,7 @@ contract CreateOrderScript is Script {
             Router.sendTokens.selector,
             weth,
             vm.envAddress("ORDER_VAULT_ADDRESS"),
-            1 * 10**18
+            initialCollateralDeltaAmount
         );
 
         // Create order
