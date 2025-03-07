@@ -82,82 +82,23 @@ contract DepositTest is Test {
         // Setup test accounts
         user = makeAddr("user");
         keeper = msg.sender;
-        
+
         // Deploy Oracle first
         oracle = new Oracle(MIN_BLOCK_INTERVAL, MAX_BLOCK_INTERVAL);
         
-        // Configure Oracle with signer address
-        oracle.setSigner(longToken, signer, true);
-        oracle.setSigner(shortToken, signer, true);
+        // Configure Oracle with signer for all tokens
         oracle.setSigner(wnt, signer, true);
-        oracle.setMinSigners(longToken, 1);
-        oracle.setMinSigners(shortToken, 1);
+        oracle.setSigner(shortToken, signer, true);
+        oracle.setSigner(longToken, signer, true);
+        
         oracle.setMinSigners(wnt, 1);
-        oracle.setMaxPriceAge(longToken, MAX_PRICE_AGE);
-        oracle.setMaxPriceAge(shortToken, MAX_PRICE_AGE);
+        oracle.setMinSigners(shortToken, 1);
+        oracle.setMinSigners(longToken, 1);
+        
         oracle.setMaxPriceAge(wnt, MAX_PRICE_AGE);
-
-        // Set initial prices (3000 USDC per 1 WETH)
-        address[] memory tokens = new address[](3);
-        tokens[0] = longToken;  // WETH
-        tokens[1] = shortToken; // USDC
-        tokens[2] = wnt;
-
-        Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](3);
-        
-        uint256 wethPrice = 3000 * 10 ** 18;
-        uint256 usdcPrice = 1 * 10 ** 18;
-        uint256 wntPrice = 3000 * 10 ** 18;
-
-        // Sign and set price for WETH using the correct private key
-        bytes32 wethMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(longToken, wethPrice, block.timestamp, block.number + 1))
-            )
-        );
-        (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(SIGNER_PK, wethMessageHash);
-        signedPrices[0] = Oracle.SignedPrice({
-            price: wethPrice,  // WETH price in USDC
-            timestamp: block.timestamp,
-            blockNumber: block.number + 1,
-            signature: abi.encodePacked(r1, s1, v1)
-        });
-
-        // Sign and set price for USDC using the correct private key
-        bytes32 usdcMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(shortToken, usdcPrice, block.timestamp, block.number + 1))
-            )
-        );
-        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(SIGNER_PK, usdcMessageHash);
-        signedPrices[1] = Oracle.SignedPrice({
-            price: usdcPrice,  // USDC price (1 USD)
-            timestamp: block.timestamp,
-            blockNumber: block.number + 1,
-            signature: abi.encodePacked(r2, s2, v2)
-        });
-
-        // Sign and set price for WNT using the correct private key
-        bytes32 wntMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(wnt, wntPrice, block.timestamp, block.number + 1))
-            )
-        );
-        (uint8 v3, bytes32 r3, bytes32 s3) = vm.sign(SIGNER_PK, wntMessageHash);
-        signedPrices[2] = Oracle.SignedPrice({
-            price: wntPrice,  // USDC price (1 USD)
-            timestamp: block.timestamp,
-            blockNumber: block.number + 1,
-            signature: abi.encodePacked(r3, s3, v3)
-        });
-
-
-        vm.roll(block.number + 1);
-        oracle.setPrices(tokens, signedPrices);
-        
+        oracle.setMaxPriceAge(shortToken, MAX_PRICE_AGE);
+        oracle.setMaxPriceAge(longToken, MAX_PRICE_AGE);
+    
         // Deploy other contracts
         dataStore = new DataStore();
         depositVault = new DepositVault();
@@ -195,7 +136,8 @@ contract DepositTest is Test {
             address(depositHandler),
             address(0), // withdrawHandler (not needed for this test)
             address(0), // orderHandler (not needed for this test)
-            wnt
+            wnt,
+            address(0) // positionHandler (not needed for this test)
         );
         
         // Update approvals to use router instead of vault
@@ -209,6 +151,71 @@ contract DepositTest is Test {
         console.log("User WETH balance:", IERC20(longToken).balanceOf(user) / 1e18);
         console.log("User USDC balance:", IERC20(shortToken).balanceOf(user) / 1e18);
         console.log("User WNT balance:", IERC20(wnt).balanceOf(user) / 1e18);
+
+        // Set oracle prices first
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(wnt);
+        tokens[1] = address(usdc);
+        tokens[2] = address(longToken);
+
+        Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](3);
+        
+        uint256 wntPrice = 3000 * 10**18;  // $3000 per WNT
+        uint256 usdcPrice = 1 * 10**18;    // $1 per USDC
+        uint256 longTokenPrice = 3000 * 10**18;  // Same as WNT price
+
+        // Sign WNT price
+        bytes32 wntMessageHash = keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(address(wnt), wntPrice, block.timestamp, block.number))
+            )
+        );
+        (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(SIGNER_PK, wntMessageHash);
+        signedPrices[0] = Oracle.SignedPrice({
+            price: wntPrice,
+            timestamp: block.timestamp,
+            blockNumber: block.number,
+            signature: abi.encodePacked(r1, s1, v1)
+        });
+
+        // Sign USDC price
+        bytes32 usdcMessageHash = keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(address(usdc), usdcPrice, block.timestamp, block.number))
+            )
+        );
+        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(SIGNER_PK, usdcMessageHash);
+        signedPrices[1] = Oracle.SignedPrice({
+            price: usdcPrice,
+            timestamp: block.timestamp,
+            blockNumber: block.number,
+            signature: abi.encodePacked(r2, s2, v2)
+        });
+
+        // Sign long token price
+        bytes32 longTokenMessageHash = keccak256(
+            abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                keccak256(abi.encodePacked(address(longToken), longTokenPrice, block.timestamp, block.number))
+            )
+        );
+        (uint8 v3, bytes32 r3, bytes32 s3) = vm.sign(SIGNER_PK, longTokenMessageHash);
+        signedPrices[2] = Oracle.SignedPrice({
+            price: longTokenPrice,
+            timestamp: block.timestamp,
+            blockNumber: block.number,
+            signature: abi.encodePacked(r3, s3, v3)
+        });
+
+        // Configure Oracle for long token
+        oracle.setSigner(longToken, signer, true);
+        oracle.setMinSigners(longToken, 1);
+        oracle.setMaxPriceAge(longToken, MAX_PRICE_AGE);
+
+        // Set prices in oracle
+        oracle.setPrices(tokens, signedPrices);
     }
 
     function testCreateDeposit() public {

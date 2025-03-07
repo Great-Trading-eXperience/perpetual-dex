@@ -43,11 +43,26 @@ contract DeployScript is Script {
         OrderVault orderVault = new OrderVault();
         DepositVault depositVault = new DepositVault();
 
+        // Deploy position handler
+        PositionHandler positionHandler = new PositionHandler(
+            address(dataStore),
+            address(oracle),
+            address(marketHandler)
+        );
+
+        marketHandler.setPositionHandler(address(positionHandler));
+        
         // Deploy handlers
         OrderHandler orderHandler = new OrderHandler(
+            address(dataStore),
             address(orderVault),
-            address(wnt)
+            address(wnt),
+            address(oracle),
+            address(positionHandler),
+            address(marketHandler)
         );
+
+        positionHandler.setOrderHandler(address(orderHandler));
         
         DepositHandler depositHandler = new DepositHandler(
             address(dataStore),
@@ -62,7 +77,8 @@ contract DeployScript is Script {
             address(depositHandler),
             address(0), // withdrawHandler - to be added later
             address(orderHandler),
-            address(wnt)
+            address(wnt),
+            address(positionHandler)
         );
 
         console.log("ORACLE_ADDRESS=%s", address(oracle));
@@ -70,10 +86,12 @@ contract DeployScript is Script {
         console.log("ORDER_VAULT_ADDRESS=%s", address(orderVault));
         console.log("DEPOSIT_VAULT_ADDRESS=%s", address(depositVault));
         console.log("ORDER_HANDLER_ADDRESS=%s", address(orderHandler));
+        console.log("POSITION_HANDLER_ADDRESS=%s", address(positionHandler));
+        console.log("MARKET_HANDLER_ADDRESS=%s", address(marketHandler));
         console.log("DEPOSIT_HANDLER_ADDRESS=%s", address(depositHandler));
         console.log("MARKET_FACTORY_ADDRESS=%s", address(marketFactory));
         console.log("ROUTER_ADDRESS=%s", address(router));
-
+        
         vm.stopBroadcast();
     }
 } 

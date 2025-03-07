@@ -14,4 +14,8 @@ contract Bank {
         IERC20(_token).transfer(_receiver, _amount);
         tokenBalances[_token] -= _amount;
     }
+
+    function syncBalance(address _token) external {
+        tokenBalances[_token] = IERC20(_token).balanceOf(address(this));
+    }
 }
