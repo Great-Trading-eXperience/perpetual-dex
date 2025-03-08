@@ -16,7 +16,26 @@ contract OrderHandler {
     address public positionHandler;
     address public marketHandler;
 
-    event OrderCreated(uint256 key, Order deposit);
+    event OrderCreated(
+        uint256 key,
+        address account,
+        address receiver,
+        address cancellationReceiver,
+        address callbackContract,
+        address uiFeeReceiver,
+        address marketToken,
+        address initialCollateralToken,
+        OrderType orderType,
+        uint256 sizeDeltaUsd,
+        uint256 initialCollateralDeltaAmount,
+        uint256 triggerPrice,
+        uint256 acceptablePrice,
+        uint256 executionFee,
+        uint256 updatedAtTime,
+        uint256 validFromTime,
+        bool isLong,
+        bool isFrozen
+    );
     event OrderCancelled(uint256 key);
     event OrderProcessed(uint256 key);
 
@@ -36,7 +55,7 @@ contract OrderHandler {
     error PriceIsGreaterThanAcceptablePrice();
     error OrderIsNotValid();
     error OrderTypeCannotBeExecuted(uint256 orderType);
-    
+
     enum OrderType {
         MarketIncrease,
         LimitIncrease,
@@ -85,7 +104,14 @@ contract OrderHandler {
         bool isFrozen;
     }
 
-    constructor(address _dataStore, address _orderVault, address _wnt, address _oracle, address _positionHandler, address _marketHandler) {
+    constructor(
+        address _dataStore,
+        address _orderVault,
+        address _wnt,
+        address _oracle,
+        address _positionHandler,
+        address _marketHandler
+    ) {
         dataStore = _dataStore;
         orderVault = _orderVault;
         wnt = _wnt;
@@ -171,7 +197,7 @@ contract OrderHandler {
             DataStore.TransactionType.Order
         );
 
-        Order memory depositData = Order(
+        Order memory orderData = Order(
             _account,
             _params.receiver,
             _params.cancellationReceiver,
@@ -191,11 +217,11 @@ contract OrderHandler {
             false
         );
 
-        DataStore(_dataStore).setOrder(nonce, depositData);
+        DataStore(_dataStore).setOrder(nonce, orderData);
 
         DataStore(_dataStore).incrementNonce(DataStore.TransactionType.Order);
 
-        emit OrderCreated(nonce, depositData);
+        emit OrderCreated(nonce, orderData.account, orderData.receiver, orderData.cancellationReceiver, orderData.callbackContract, orderData.uiFeeReceiver, orderData.marketToken, orderData.initialCollateralToken, orderData.orderType, orderData.sizeDeltaUsd, orderData.initialCollateralDeltaAmount, orderData.triggerPrice, orderData.acceptablePrice, orderData.executionFee, orderData.updatedAtTime, orderData.validFromTime, orderData.isLong, orderData.isFrozen);
     }
 
     function cancelOrder(address _dataStore, uint256 _key) external {
@@ -209,7 +235,11 @@ contract OrderHandler {
             );
         }
 
-        OrderVault(orderVault).transferOut(wnt, order.account, order.executionFee);
+        OrderVault(orderVault).transferOut(
+            wnt,
+            order.account,
+            order.executionFee
+        );
 
         DataStore(_dataStore).setOrder(
             _key,
@@ -248,16 +278,22 @@ contract OrderHandler {
             revert CollateralTokenPriceIsZero();
         }
 
-        MarketHandler.MarketState memory marketState = MarketHandler(marketHandler).getMarketState(order.marketToken);
+        MarketHandler.MarketState memory marketState = MarketHandler(
+            marketHandler
+        ).getMarketState(order.marketToken);
 
-        uint256 sizeInTokens = order.sizeDeltaUsd / collateralTokenPrice * (10 ** ERC20(order.initialCollateralToken).decimals());
+        uint256 sizeInTokens = (order.sizeDeltaUsd / collateralTokenPrice) *
+            (10 ** ERC20(order.initialCollateralToken).decimals());
 
         if (
             order.orderType == OrderType.MarketIncrease ||
             order.orderType == OrderType.LimitIncrease ||
             order.orderType == OrderType.StopIncrease
         ) {
-            if (order.orderType == OrderType.LimitIncrease && order.triggerPrice > collateralTokenPrice) {
+            if (
+                order.orderType == OrderType.LimitIncrease &&
+                order.triggerPrice > collateralTokenPrice
+            ) {
                 revert TriggerPriceIsGreaterThanCollateralTokenPrice();
             }
 
@@ -265,7 +301,8 @@ contract OrderHandler {
                 revert PriceIsGreaterThanAcceptablePrice();
             }
 
-            uint256 availableSizeInTokens = marketState.longTokenAmount - marketState.longTokenOpenInterest;
+            uint256 availableSizeInTokens = marketState.longTokenAmount -
+                marketState.longTokenOpenInterest;
 
             if (sizeInTokens > availableSizeInTokens) {
                 revert InsufficientTokenAmount();
@@ -275,7 +312,10 @@ contract OrderHandler {
             order.orderType == OrderType.LimitDecrease ||
             order.orderType == OrderType.StopLossDecrease
         ) {
-            if (order.orderType == OrderType.LimitIncrease && order.triggerPrice > collateralTokenPrice) {
+            if (
+                order.orderType == OrderType.LimitIncrease &&
+                order.triggerPrice > collateralTokenPrice
+            ) {
                 revert TriggerPriceIsGreaterThanCollateralTokenPrice();
             }
         }
@@ -301,8 +341,12 @@ contract OrderHandler {
                 _order,
                 _sizeInTokens
             );
-            
-            OrderVault(orderVault).transferOut(_order.initialCollateralToken, _order.marketToken, _order.initialCollateralDeltaAmount);
+
+            OrderVault(orderVault).transferOut(
+                _order.initialCollateralToken,
+                _order.marketToken,
+                _order.initialCollateralDeltaAmount
+            );
         } else if (
             _order.orderType == OrderType.MarketDecrease ||
             _order.orderType == OrderType.LimitDecrease ||
@@ -313,13 +357,17 @@ contract OrderHandler {
                 _sizeInTokens
             );
 
-            MarketToken(_order.marketToken).transferOut(_order.account, _order.initialCollateralToken, _sizeInTokens);
-        } else  {
+            MarketToken(_order.marketToken).transferOut(
+                _order.account,
+                _order.initialCollateralToken,
+                _sizeInTokens
+            );
+        } else {
             revert OrderTypeCannotBeExecuted(uint256(_order.orderType));
-        } 
+        }
 
         OrderVault(orderVault).transferOut(wnt, _keeper, _order.executionFee);
-       
+
         DataStore(dataStore).setOrder(
             _key,
             Order({
