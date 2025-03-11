@@ -8,6 +8,7 @@ import "./DataStore.sol";
 import "./DepositHandler.sol";
 import "./OrderHandler.sol";
 import "./PositionHandler.sol";
+import "./WithdrawHandler.sol";
 
 contract Router is Multicall {
     address public wnt;
@@ -67,5 +68,19 @@ contract Router is Multicall {
 
     function liquidatePosition(PositionHandler.LiquidatePositionParams memory _params) external {
         PositionHandler(positionHandler).liquidatePosition(_params, msg.sender);
+    }
+
+    function createWithdraw(WithdrawHandler.CreateWithdrawParams memory _params) external returns (uint256) {
+        return WithdrawHandler(withdrawHandler).createWithdraw(msg.sender, _params);
+    }
+
+    function cancelWithdraw(uint256 _key) external {
+        WithdrawHandler.Withdraw memory withdraw = DataStore(dataStore).getWithdraw(_key);
+
+        if (withdraw.account != msg.sender) {
+            revert NotOwner();
+        }
+
+        WithdrawHandler(withdrawHandler).cancelWithdraw(_key);
     }
 }

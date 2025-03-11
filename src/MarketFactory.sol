@@ -6,7 +6,7 @@ import "./DataStore.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MarketFactory {
-    event MarketCreated(address indexed marketToken, address indexed longToken, address indexed shortToken);
+    event MarketCreated(string marketName, address indexed marketToken, address indexed longToken, address indexed shortToken);
 
     error MarketAlreadyExists(address longToken, address shortToken);
 
@@ -39,7 +39,7 @@ contract MarketFactory {
         
         DataStore(dataStore).setMarketKey(address(marketToken), keccak256(abi.encodePacked(_longToken, _shortToken)));
         
-        emit MarketCreated(address(marketToken), _longToken, _shortToken);
+        emit MarketCreated(marketName, address(marketToken), _longToken, _shortToken);
     
         return address(marketToken);
     }
