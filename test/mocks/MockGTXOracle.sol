@@ -8,6 +8,9 @@ import {Reclaim} from "../../reclaim/Reclaim.sol";
 contract MockGTXOracleServiceManager is IGTXOracleServiceManager {
     address public constant CLAIM_OWNER = 0xfdE71B8a4f2D10DD2D210cf868BB437038548A39;
     uint32 public latestTaskNum;
+    address public marketFactory;
+    uint256 public minBlockInterval;
+    uint256 public maxBlockInterval;
 
     mapping(uint32 => bytes32) public allTaskHashes;
     mapping(address => mapping(uint32 => bytes)) public allTaskResponses;
@@ -15,10 +18,12 @@ contract MockGTXOracleServiceManager is IGTXOracleServiceManager {
     mapping(address => Source[]) public sources;
     mapping(address => string) public pairs;
 
-    function requestNewOracleTask(address _tokenAddress, string calldata _tokenPair, Source[] calldata _sources)
-        external
-        returns (uint32 taskIndex)
-    {
+    function requestNewOracleTask(
+        address _tokenAddress,
+        address, /*_tokenAddress2*/
+        string calldata _tokenPair,
+        Source[] calldata _sources
+    ) external returns (uint32 taskIndex) {
         require(_tokenAddress != address(0), "Invalid token address");
         require(_sources.length > 0, "Sources cannot be empty");
 
@@ -30,7 +35,9 @@ contract MockGTXOracleServiceManager is IGTXOracleServiceManager {
         latestTaskNum = latestTaskNum + 1;
     }
 
-    function requestOraclePriceTask(address _tokenAddress) external returns (uint32 taskIndex) {
+    function requestOraclePriceTask(
+        address _tokenAddress
+    ) external returns (uint32 taskIndex) {
         require(_tokenAddress != address(0), "Invalid token address");
         require(sources[_tokenAddress].length > 0, "Sources not registered");
 
@@ -74,11 +81,27 @@ contract MockGTXOracleServiceManager is IGTXOracleServiceManager {
         emit OracleTaskResponded(referenceTaskIndex, task, msg.sender, signature);
     }
 
-    function getPrice(address _tokenAddress) external view override returns (uint256) {
+    function getPrice(
+        address _tokenAddress
+    ) external view override returns (uint256) {
         return prices[_tokenAddress].value;
     }
 
-    function getSources(address _tokenAddress) external view override returns (Source[] memory) {
+    function getSources(
+        address _tokenAddress
+    ) external view override returns (Source[] memory) {
         return sources[_tokenAddress];
+    }
+
+    function initialize(
+        address _marketFactory,
+        uint256 _minBlockInterval,
+        uint256 _maxBlockInterval
+    ) external {
+        marketFactory = _marketFactory;
+        minBlockInterval = _minBlockInterval;
+        maxBlockInterval = _maxBlockInterval;
+
+        emit Initialize(marketFactory);
     }
 }

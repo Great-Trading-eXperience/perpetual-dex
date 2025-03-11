@@ -47,7 +47,7 @@ contract DepositTest is Test {
     MarketHandler public marketHandler;
     Oracle public oracle;
     Router public router;
-    
+
     address public wnt;
     address public longToken;
     address public shortToken;
@@ -56,7 +56,7 @@ contract DepositTest is Test {
     address public keeper;
 
     uint256 constant EXECUTION_FEE = 0.01 ether;
-    uint256 constant INITIAL_BALANCE = 10000 ether;
+    uint256 constant INITIAL_BALANCE = 10_000 ether;
 
     // Constants for Oracle setup
     uint256 constant MIN_BLOCK_INTERVAL = 1;
@@ -70,50 +70,47 @@ contract DepositTest is Test {
     function setUp() public {
         // Get signer address from private key
         signer = vm.addr(SIGNER_PK);
-        
+
         // Deploy mock tokens with proper names
         MockWETH weth = new MockWETH();
         MockUSDC usdc = new MockUSDC();
         MockToken wbtc = new MockToken();
         wnt = address(weth);
-        longToken = address(wbtc);    // WETH as long token
-        shortToken = address(usdc);   // USDC as short token
-        
+        longToken = address(wbtc); // WETH as long token
+        shortToken = address(usdc); // USDC as short token
+
         // Setup test accounts
         user = makeAddr("user");
         keeper = msg.sender;
 
         // Deploy Oracle first
         oracle = new Oracle(MIN_BLOCK_INTERVAL, MAX_BLOCK_INTERVAL);
-        
+
         // Configure Oracle with signer for all tokens
         oracle.setSigner(wnt, signer, true);
         oracle.setSigner(shortToken, signer, true);
         oracle.setSigner(longToken, signer, true);
-        
+
         oracle.setMinSigners(wnt, 1);
         oracle.setMinSigners(shortToken, 1);
         oracle.setMinSigners(longToken, 1);
-        
+
         oracle.setMaxPriceAge(wnt, MAX_PRICE_AGE);
         oracle.setMaxPriceAge(shortToken, MAX_PRICE_AGE);
         oracle.setMaxPriceAge(longToken, MAX_PRICE_AGE);
-    
+
         // Deploy other contracts
         dataStore = new DataStore();
         depositVault = new DepositVault();
         marketFactory = new MarketFactory(address(dataStore));
         marketHandler = new MarketHandler(address(dataStore), address(oracle));
         depositHandler = new DepositHandler(
-            address(dataStore),
-            address(depositVault),
-            address(marketHandler),
-            wnt
+            address(dataStore), address(depositVault), address(marketHandler), wnt
         );
 
         // Create market
         marketToken = marketFactory.createMarket(longToken, shortToken);
-        
+
         // First mint tokens to this contract
         MockWETH(longToken).mint(address(this), INITIAL_BALANCE);
         MockUSDC(shortToken).mint(address(this), INITIAL_BALANCE);
@@ -125,11 +122,11 @@ contract DepositTest is Test {
         IERC20(wnt).approve(user, type(uint256).max);
 
         // Fund test accounts with realistic amounts
-        vm.deal(user, INITIAL_BALANCE);  // ETH for gas
-        IERC20(longToken).transfer(user, 1 * 10**18);    // 100 WETH
-        IERC20(shortToken).transfer(user, 3000 * 10**18); // 300,000 USDC
-        IERC20(wnt).transfer(user, INITIAL_BALANCE * 2);         // WNT for execution fee
-        
+        vm.deal(user, INITIAL_BALANCE); // ETH for gas
+        IERC20(longToken).transfer(user, 1 * 10 ** 18); // 100 WETH
+        IERC20(shortToken).transfer(user, 3000 * 10 ** 18); // 300,000 USDC
+        IERC20(wnt).transfer(user, INITIAL_BALANCE * 2); // WNT for execution fee
+
         // Deploy Router after other contracts
         router = new Router(
             address(dataStore),
@@ -137,9 +134,11 @@ contract DepositTest is Test {
             address(0), // withdrawHandler (not needed for this test)
             address(0), // orderHandler (not needed for this test)
             wnt,
-            address(0) // positionHandler (not needed for this test)
+            address(0), // positionHandler (not needed for this test)
+            address(marketFactory),
+            address(oracle)
         );
-        
+
         // Update approvals to use router instead of vault
         vm.startPrank(user);
         IERC20(longToken).approve(address(router), type(uint256).max);
@@ -159,10 +158,10 @@ contract DepositTest is Test {
         tokens[2] = address(longToken);
 
         Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](3);
-        
-        uint256 wntPrice = 3000 * 10**18;  // $3000 per WNT
-        uint256 usdcPrice = 1 * 10**18;    // $1 per USDC
-        uint256 longTokenPrice = 3000 * 10**18;  // Same as WNT price
+
+        uint256 wntPrice = 3000 * 10 ** 18; // $3000 per WNT
+        uint256 usdcPrice = 1 * 10 ** 18; // $1 per USDC
+        uint256 longTokenPrice = 3000 * 10 ** 18; // Same as WNT price
 
         // Sign WNT price
         bytes32 wntMessageHash = keccak256(
@@ -198,7 +197,11 @@ contract DepositTest is Test {
         bytes32 longTokenMessageHash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(address(longToken), longTokenPrice, block.timestamp, block.number))
+                keccak256(
+                    abi.encodePacked(
+                        address(longToken), longTokenPrice, block.timestamp, block.number
+                    )
+                )
             )
         );
         (uint8 v3, bytes32 r3, bytes32 s3) = vm.sign(SIGNER_PK, longTokenMessageHash);
@@ -220,7 +223,7 @@ contract DepositTest is Test {
 
     function testCreateDeposit() public {
         vm.startPrank(user);
-        
+
         // Create deposit params
         DepositHandler.CreateDepositParams memory params = DepositHandler.CreateDepositParams({
             receiver: user,
@@ -238,30 +241,24 @@ contract DepositTest is Test {
 
         // Prepare multicall data
         bytes[] memory data = new bytes[](4);
-        
+
         // 1. Transfer WNT for execution fee
-        data[0] = abi.encodeCall(
-            Router.sendWnt,
-            (address(depositVault), EXECUTION_FEE)
-        );
+        data[0] = abi.encodeCall(Router.sendWnt, (address(depositVault), EXECUTION_FEE));
 
         // 2. Transfer long token
         data[1] = abi.encodeCall(
             Router.sendTokens,
-            (longToken, address(depositVault), 1 * 10**18) // 1 WETH
+            (longToken, address(depositVault), 1 * 10 ** 18) // 1 WETH
         );
 
         // 3. Transfer short token
         data[2] = abi.encodeCall(
             Router.sendTokens,
-            (shortToken, address(depositVault), 3000 * 10**18) // 3000 USDC
+            (shortToken, address(depositVault), 3000 * 10 ** 18) // 3000 USDC
         );
 
         // 4. Create deposit
-        data[3] = abi.encodeCall(
-            Router.createDeposit,
-            (params)
-        );
+        data[3] = abi.encodeCall(Router.createDeposit, (params));
 
         // Execute multicall
         router.multicall(data);
@@ -269,41 +266,41 @@ contract DepositTest is Test {
         // Verify deposit was created
         uint256 depositKey = 0; // First deposit should have key 0
         DepositHandler.Deposit memory deposit = DataStore(dataStore).getDeposit(depositKey);
-        
+
         assertEq(deposit.account, user);
         assertEq(deposit.receiver, user);
         assertEq(deposit.marketToken, marketToken);
         assertEq(deposit.initialLongToken, longToken);
         assertEq(deposit.initialShortToken, shortToken);
         assertEq(deposit.executionFee, EXECUTION_FEE);
-        
+
         // Verify tokens were transferred
         assertLt(IERC20(longToken).balanceOf(user), longBalanceBefore);
         assertLt(IERC20(shortToken).balanceOf(user), shortBalanceBefore);
-        
+
         vm.stopPrank();
     }
 
     function testExecuteDeposit() public {
         // First create a deposit
         testCreateDeposit();
-        
+
         uint256 depositKey = 0;
         DepositHandler.Deposit memory depositBefore = DataStore(dataStore).getDeposit(depositKey);
-        
+
         // Record balances before execution
         uint256 keeperBalanceBefore = keeper.balance;
         uint256 marketTokenLongBefore = IERC20(longToken).balanceOf(marketToken);
         uint256 marketTokenShortBefore = IERC20(shortToken).balanceOf(marketToken);
         uint256 userMarketTokenBefore = IERC20(marketToken).balanceOf(user);
-        
+
         vm.prank(keeper);
         depositHandler.executeDeposit(depositKey);
-        
+
         // Verify deposit was cleared
         DepositHandler.Deposit memory depositAfter = DataStore(dataStore).getDeposit(depositKey);
         assertEq(depositAfter.account, address(0));
-        
+
         // Verify tokens were transferred to market
         assertEq(
             IERC20(longToken).balanceOf(marketToken),
@@ -313,54 +310,52 @@ contract DepositTest is Test {
             IERC20(shortToken).balanceOf(marketToken),
             marketTokenShortBefore + depositBefore.initialShortTokenAmount
         );
-        
+
         // Verify user received market tokens
         assertGt(IERC20(marketToken).balanceOf(user), userMarketTokenBefore);
-        
+
         // Verify keeper received execution fee
-        assertApproxEqRel(keeper.balance, keeperBalanceBefore + depositBefore.executionFee, 0.000001 ether);
+        assertApproxEqRel(
+            keeper.balance, keeperBalanceBefore + depositBefore.executionFee, 0.000001 ether
+        );
     }
 
     function testCancelDeposit() public {
         // First create a deposit
         testCreateDeposit();
-        
+
         uint256 depositKey = 0;
         DepositHandler.Deposit memory depositBefore = DataStore(dataStore).getDeposit(depositKey);
-        
+
         // Record balances before cancellation
         uint256 userLongBefore = IERC20(longToken).balanceOf(user);
         uint256 userShortBefore = IERC20(shortToken).balanceOf(user);
         uint256 userWntBefore = IERC20(wnt).balanceOf(user);
-        
+
         vm.prank(user);
         router.cancelDeposit(depositKey);
-        
+
         // Verify deposit was cleared
         DepositHandler.Deposit memory depositAfter = DataStore(dataStore).getDeposit(depositKey);
         assertEq(depositAfter.account, address(0));
-        
+
         // Verify tokens were returned to user
         assertEq(
-            IERC20(longToken).balanceOf(user),
-            userLongBefore + depositBefore.initialLongTokenAmount
+            IERC20(longToken).balanceOf(user), userLongBefore + depositBefore.initialLongTokenAmount
         );
         assertEq(
             IERC20(shortToken).balanceOf(user),
             userShortBefore + depositBefore.initialShortTokenAmount
         );
-        assertEq(
-            IERC20(wnt).balanceOf(user),
-            userWntBefore + depositBefore.executionFee
-        );
+        assertEq(IERC20(wnt).balanceOf(user), userWntBefore + depositBefore.executionFee);
     }
 
     function testCreateDepositWithWNTAsLong() public {
         // Deploy a new market with WNT as long token
         address wntMarket = marketFactory.createMarket(wnt, shortToken);
-        
+
         vm.startPrank(user);
-        
+
         // Create deposit params
         DepositHandler.CreateDepositParams memory params = DepositHandler.CreateDepositParams({
             receiver: user,
@@ -378,30 +373,19 @@ contract DepositTest is Test {
 
         // Prepare multicall data
         bytes[] memory data = new bytes[](4);
-        
+
         // 1. Transfer WNT for execution fee
-        data[0] = abi.encodeCall(
-            Router.sendWnt,
-            (address(depositVault), EXECUTION_FEE)
-        );
+        data[0] = abi.encodeCall(Router.sendWnt, (address(depositVault), EXECUTION_FEE));
 
         // 2. Transfer WNT as long token (1 WNT)
-        data[1] = abi.encodeCall(
-            Router.sendWnt,
-            (address(depositVault), 1 * 10**18)
-        );
+        data[1] = abi.encodeCall(Router.sendWnt, (address(depositVault), 1 * 10 ** 18));
 
         // 3. Transfer short token (3000 USDC for 1 WNT)
-        data[2] = abi.encodeCall(
-            Router.sendTokens,
-            (shortToken, address(depositVault), 3000 * 10**18)
-        );
+        data[2] =
+            abi.encodeCall(Router.sendTokens, (shortToken, address(depositVault), 3000 * 10 ** 18));
 
         // 4. Create deposit
-        data[3] = abi.encodeCall(
-            Router.createDeposit,
-            (params)
-        );
+        data[3] = abi.encodeCall(Router.createDeposit, (params));
 
         // Execute multicall
         router.multicall(data);
@@ -409,28 +393,28 @@ contract DepositTest is Test {
         // Verify deposit was created
         uint256 depositKey = 0; // Second deposit should have key 1
         DepositHandler.Deposit memory deposit = DataStore(dataStore).getDeposit(depositKey);
-        
+
         assertEq(deposit.account, user);
         assertEq(deposit.receiver, user);
         assertEq(deposit.marketToken, wntMarket);
         assertEq(deposit.initialLongToken, wnt);
         assertEq(deposit.initialShortToken, shortToken);
         assertEq(deposit.executionFee, EXECUTION_FEE);
-        assertEq(deposit.initialLongTokenAmount, 1 * 10**18);
-        assertEq(deposit.initialShortTokenAmount, 3000 * 10**18);
-        
+        assertEq(deposit.initialLongTokenAmount, 1 * 10 ** 18);
+        assertEq(deposit.initialShortTokenAmount, 3000 * 10 ** 18);
+
         // Verify tokens were transferred
         assertEq(
             IERC20(wnt).balanceOf(user),
-            wntBalanceBefore - EXECUTION_FEE - (1 * 10**18), // Both execution fee and long token amount
+            wntBalanceBefore - EXECUTION_FEE - (1 * 10 ** 18), // Both execution fee and long token amount
             "WNT balance incorrect"
         );
         assertEq(
             IERC20(shortToken).balanceOf(user),
-            shortBalanceBefore - (3000 * 10**18),
+            shortBalanceBefore - (3000 * 10 ** 18),
             "Short token balance incorrect"
         );
-        
+
         vm.stopPrank();
 
         // Test execution
@@ -438,28 +422,27 @@ contract DepositTest is Test {
         uint256 marketWntBefore = IERC20(wnt).balanceOf(wntMarket);
         uint256 marketShortBefore = IERC20(shortToken).balanceOf(wntMarket);
         uint256 userMarketTokenBefore = IERC20(wntMarket).balanceOf(user);
-        
+
         vm.prank(keeper);
         depositHandler.executeDeposit(depositKey);
-        
+
         // Verify deposit was cleared
         DepositHandler.Deposit memory depositAfter = DataStore(dataStore).getDeposit(depositKey);
         assertEq(depositAfter.account, address(0));
-        
+
         // Verify tokens were transferred to market
-        assertEq(
-            IERC20(wnt).balanceOf(wntMarket),
-            marketWntBefore + deposit.initialLongTokenAmount
-        );
+        assertEq(IERC20(wnt).balanceOf(wntMarket), marketWntBefore + deposit.initialLongTokenAmount);
         assertEq(
             IERC20(shortToken).balanceOf(wntMarket),
             marketShortBefore + deposit.initialShortTokenAmount
         );
-        
+
         // Verify user received market tokens
         assertGt(IERC20(wntMarket).balanceOf(user), userMarketTokenBefore);
-        
+
         // Verify keeper received execution fee
-        assertApproxEqRel(keeper.balance, keeperBalanceBefore + deposit.executionFee, 0.000001 ether);
+        assertApproxEqRel(
+            keeper.balance, keeperBalanceBefore + deposit.executionFee, 0.000001 ether
+        );
     }
-} 
+}

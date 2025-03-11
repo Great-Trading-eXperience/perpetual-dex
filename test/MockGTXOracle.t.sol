@@ -19,12 +19,19 @@ contract MockGTXOracleTest is Test {
         // Define oracle source data
         address tokenAddress = 0x1234567890123456789012345678901234567890;
         string memory tokenPair = "ETH/USDT";
-        MockGTXOracleServiceManager.Source[] memory sources = new MockGTXOracleServiceManager.Source[](2);
-        sources[0] = IGTXOracleServiceManager.Source({name: "binance", identifier: "ETHUSDT", network: ""});
-        sources[1] = IGTXOracleServiceManager.Source({name: "dexscreener", identifier: "0x...", network: "ethereum"});
+        MockGTXOracleServiceManager.Source[] memory sources =
+            new MockGTXOracleServiceManager.Source[](2);
+        sources[0] =
+            IGTXOracleServiceManager.Source({name: "binance", identifier: "ETHUSDT", network: ""});
+        sources[1] = IGTXOracleServiceManager.Source({
+            name: "dexscreener",
+            identifier: "0x...",
+            network: "ethereum"
+        });
 
         // Request new oracle task
-        uint32 taskIndex = mockOracle.requestNewOracleTask(tokenAddress, tokenPair, sources);
+        uint32 taskIndex =
+            mockOracle.requestNewOracleTask(tokenAddress, address(0), tokenPair, sources);
 
         // Verify the task index
         assertEq(taskIndex, 0);
@@ -33,16 +40,23 @@ contract MockGTXOracleTest is Test {
     function testRespondToOracleTask() public {
         // Define oracle task data
         address tokenAddress = 0x1234567890123456789012345678901234567890;
-        uint256 price = 123456789; // Price with 8 decimals
+        uint256 price = 123_456_789; // Price with 8 decimals
         string memory tokenPair = "ETH/USDT";
 
-        MockGTXOracleServiceManager.Source[] memory sources = new MockGTXOracleServiceManager.Source[](1);
-        sources[0] = IGTXOracleServiceManager.Source({name: "binance", identifier: "ETHUSDT", network: ""});
+        MockGTXOracleServiceManager.Source[] memory sources =
+            new MockGTXOracleServiceManager.Source[](1);
+        sources[0] =
+            IGTXOracleServiceManager.Source({name: "binance", identifier: "ETHUSDT", network: ""});
 
-        uint32 taskIndex = mockOracle.requestNewOracleTask(tokenAddress, tokenPair, sources);
+        uint32 taskIndex =
+            mockOracle.requestNewOracleTask(tokenAddress, address(0), tokenPair, sources);
 
         Reclaim.Proof memory mockProof = Reclaim.Proof({
-            claimInfo: Claims.ClaimInfo({provider: "MockProvider", parameters: "{}", context: "TestContext"}),
+            claimInfo: Claims.ClaimInfo({
+                provider: "MockProvider",
+                parameters: "{}",
+                context: "TestContext"
+            }),
             signedClaim: Claims.SignedClaim({
                 claim: Claims.CompleteClaimData({
                     identifier: keccak256(abi.encodePacked("mock")),
@@ -57,6 +71,7 @@ contract MockGTXOracleTest is Test {
         // Respond to oracle task
         MockGTXOracleServiceManager.OracleTask memory task = IGTXOracleServiceManager.OracleTask({
             tokenAddress: tokenAddress,
+            tokenAddress2: address(0),
             taskCreatedBlock: uint32(block.number),
             isNewData: true,
             tokenPair: tokenPair,
@@ -73,16 +88,23 @@ contract MockGTXOracleTest is Test {
     function testequestPriceOracleTask() public {
         // Define oracle task data
         address tokenAddress = 0x1234567890123456789012345678901234567890;
-        uint256 price = 123456789; // Price with 8 decimals
+        uint256 price = 123_456_789; // Price with 8 decimals
         string memory tokenPair = "ETH/USDT";
 
-        MockGTXOracleServiceManager.Source[] memory sources = new MockGTXOracleServiceManager.Source[](1);
-        sources[0] = IGTXOracleServiceManager.Source({name: "binance", identifier: "ETHUSDT", network: ""});
+        MockGTXOracleServiceManager.Source[] memory sources =
+            new MockGTXOracleServiceManager.Source[](1);
+        sources[0] =
+            IGTXOracleServiceManager.Source({name: "binance", identifier: "ETHUSDT", network: ""});
 
-        uint32 taskIndex = mockOracle.requestNewOracleTask(tokenAddress, tokenPair, sources);
+        uint32 taskIndex =
+            mockOracle.requestNewOracleTask(tokenAddress, address(0), tokenPair, sources);
 
         Reclaim.Proof memory mockProof = Reclaim.Proof({
-            claimInfo: Claims.ClaimInfo({provider: "MockProvider", parameters: "{}", context: "TestContext"}),
+            claimInfo: Claims.ClaimInfo({
+                provider: "MockProvider",
+                parameters: "{}",
+                context: "TestContext"
+            }),
             signedClaim: Claims.SignedClaim({
                 claim: Claims.CompleteClaimData({
                     identifier: keccak256(abi.encodePacked("mock")),
@@ -97,6 +119,7 @@ contract MockGTXOracleTest is Test {
         // Respond to oracle task
         MockGTXOracleServiceManager.OracleTask memory task = IGTXOracleServiceManager.OracleTask({
             tokenAddress: tokenAddress,
+            tokenAddress2: address(0),
             taskCreatedBlock: uint32(block.number),
             isNewData: true,
             tokenPair: tokenPair,
@@ -110,7 +133,7 @@ contract MockGTXOracleTest is Test {
         assertEq(retrievedPrice, price);
 
         // Request oracle task
-        price = 133446789; // Price with 8 decimals
+        price = 133_446_789; // Price with 8 decimals
         taskIndex = mockOracle.requestOraclePriceTask(tokenAddress);
         mockOracle.respondToOracleTask(task, price, taskIndex, bytes(""), mockProof);
         // Retrieve and verify the oracle price data
