@@ -88,13 +88,6 @@ contract MarketHandler {
 
         uint256 depositValueInUsd = longTokenValueInUsd + shortTokenValueInUsd;
 
-        console.log("getMarketTokens");
-        console.log("longTokenAmount", longTokenAmount);
-        console.log("shortTokenAmount", shortTokenAmount);
-        console.log("longTokenValueInUsd", longTokenValueInUsd);
-        console.log("shortTokenValueInUsd", shortTokenValueInUsd);
-        console.log("depositValueInUsd", depositValueInUsd);
-
         if (marketTokenSupply == 0) {
             return depositValueInUsd;
         }
@@ -118,16 +111,7 @@ contract MarketHandler {
         // Calculate USD value of pool's tokens
         uint256 longTokenUsd = (state.longTokenAmount * longTokenPrice) / (10 ** longTokenDecimals);
         uint256 shortTokenUsd = (state.shortTokenAmount * shortTokenPrice) / (10 ** shortTokenDecimals);
-
-        console.log("getPoolValueUsd");
-        console.log("longTokenAmount", state.longTokenAmount);
-        console.log("shortTokenAmount", state.shortTokenAmount);
-        console.log("longTokenPrice", longTokenPrice);
-        console.log("shortTokenPrice", shortTokenPrice);
-        console.log("longTokenUsd", longTokenUsd);
-        console.log("shortTokenUsd", shortTokenUsd);
-        console.log("poolValueUsd", longTokenUsd + shortTokenUsd);
-
+        
         return longTokenUsd + shortTokenUsd;
     }
 
@@ -239,19 +223,7 @@ contract MarketHandler {
         
         // For short token (USDC):
         uint256 shortTokenOutput = (shortTokenValueUsd * (10 ** IERC20Metadata(state.shortToken).decimals())) / shortTokenPrice;
-        
-        console.log("Withdraw calculation:");
-        console.log("withdrawValueUsd", withdrawValueUsd);
-        console.log("longTokenValueUsd", longTokenValueUsd);
-        console.log("shortTokenValueUsd", shortTokenValueUsd);
-        console.log("longTokenPrice", longTokenPrice);
-        console.log("shortTokenPrice", shortTokenPrice);
-        console.log("longTokenOutput", longTokenOutput);
-        console.log("shortTokenOutput", shortTokenOutput);
-
-        console.log("longTokenBalance", IERC20(state.longToken).balanceOf(marketToken));
-        console.log("shortTokenBalance", IERC20(state.shortToken).balanceOf(marketToken));
-                
+                  
         // Transfer tokens to receiver
         MarketToken(marketToken).syncBalance(state.longToken);
         MarketToken(marketToken).syncBalance(state.shortToken);

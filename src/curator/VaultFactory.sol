@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
-import "./CurratorRegistry.sol";
-import "./Currator.sol";
+import "./CuratorRegistry.sol";
+import "./Curator.sol";
 import "./AssetVault.sol";
 
 contract VaultFactory is Ownable {
@@ -20,9 +20,10 @@ contract VaultFactory is Ownable {
     address[] public allVaults;
         
     address public immutable router;
+    address public immutable dataStore;
     address public immutable depositHandler;
     address public immutable depositVault;
-    
+    address public immutable withdrawVault;
     // Events
     event VaultDeployed(
         address indexed curator, 
@@ -35,9 +36,11 @@ contract VaultFactory is Ownable {
     constructor(
         address _vaultImplementation, 
         address _curatorRegistry,
+        address _dataStore,
         address _router,
         address _depositHandler,
-        address _depositVault
+        address _depositVault,
+        address _withdrawVault
     ) Ownable(msg.sender) {
         require(_vaultImplementation != address(0), "Invalid vault implementation");
         require(_curatorRegistry != address(0), "Invalid registry address");
@@ -46,8 +49,10 @@ contract VaultFactory is Ownable {
         curatorRegistry = CuratorRegistry(_curatorRegistry);
         
         router = _router;
+        dataStore = _dataStore;
         depositHandler = _depositHandler;
         depositVault = _depositVault;
+        withdrawVault = _withdrawVault;
     }
     
     function deployVault(
@@ -106,13 +111,17 @@ contract VaultFactory is Ownable {
         address asset,
         string memory name,
         string memory symbol,
-        address marketFactory
+        address marketFactory,
+        address wnt
     ) external returns (address) {
         AssetVault vault = new AssetVault(
             router,
+            dataStore,
             depositHandler,
             depositVault,
-            marketFactory
+            withdrawVault,
+            marketFactory,
+            wnt
         );
         vault.initialize(curator, asset, name, symbol);
         return address(vault);

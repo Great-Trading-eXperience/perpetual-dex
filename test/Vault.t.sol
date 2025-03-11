@@ -12,6 +12,8 @@ import "../src/MarketFactory.sol";
 import "../src/Oracle.sol";
 import "../src/mocks/MockToken.sol";
 import "../src/curator/AssetVault.sol";
+import "../src/curator/VaultFactory.sol";
+import "../src/curator/CuratorRegistry.sol";
 
 contract VaultTest is Test {
     Router public router;
@@ -27,6 +29,9 @@ contract VaultTest is Test {
     MarketToken public marketToken;
     DepositHandler public depositHandler;
     AssetVault public vault;
+    VaultFactory public vaultFactory;
+    AssetVault public vaultImplementation;
+    CuratorRegistry public registry;
 
     address public user = address(1);
     address public keeper = address(2);
@@ -134,26 +139,48 @@ contract VaultTest is Test {
         address marketTokenAddress = marketFactory.createMarket(address(wnt), address(usdc));
         marketToken = MarketToken(marketTokenAddress);
 
-        // Deploy vault
-        vault = new AssetVault(
+        // Deploy vault implementation first
+        vaultImplementation = new AssetVault(
+            address(router),
+            address(dataStore),
+            address(depositHandler),
+            address(depositVault),
+            address(withdrawVault),
+            address(marketFactory),
+            address(wnt)
+        );
+
+        // Deploy registry
+        registry = new CuratorRegistry();
+
+        // Deploy factory and create vault through it
+        vaultFactory = new VaultFactory(
+            address(vaultImplementation), // Now we have a valid implementation
+            address(registry),
+            address(dataStore),
             address(router),
             address(depositHandler),
             address(depositVault),
             address(withdrawVault)
         );
 
-        // Initialize vault
-        vault.initialize(
+        // Create vault through factory
+        vault = AssetVault(vaultFactory.createVault(
             curator,
             address(usdc),
             "USDC Vault",
-            "vUSDC"
-        );
+            "vUSDC",
+            address(marketFactory),
+            address(wnt)
+        ));
 
         // Fund accounts
         deal(address(wnt), address(this), 100 ether);
-        deal(address(usdc), address(this), 100_000 * 10**6);
-        deal(address(usdc), user, 100_000 * 10**6);
+        deal(address(usdc), address(this), 100_000 * 10e6);
+        deal(address(usdc), user, 100_000 * 10e6);
+        
+        // Fund vault with WNT for execution fees
+        deal(address(wnt), address(vault), 10 ether);
 
         // Approvals
         vm.startPrank(user);
@@ -195,8 +222,13 @@ contract VaultTest is Test {
         (address[] memory markets, uint256[] memory allocations) = vault.getCurrentAllocations();
         assertEq(allocations[0], 5000 * 10**6); // Should have allocated 5,000 USDC
         
+        vm.startPrank(keeper);
+        depositHandler.executeDeposit(0);
+        vm.stopPrank();
+
         // Verify market token balance
         uint256 marketTokenBalance = marketToken.balanceOf(address(vault));
+        
         assertGt(marketTokenBalance, 0, "Should have received market tokens");
     }
 
@@ -212,10 +244,17 @@ contract VaultTest is Test {
         vault.updateMarket(address(marketToken), 2500, true);
         vm.stopPrank();
 
+        // Execute the withdraw
+        vm.startPrank(address(withdrawHandler));
+        withdrawHandler.executeWithdraw(0);  // Execute withdraw with key 0
+        vm.stopPrank();
+
         // Verify deallocation
         uint256 finalMarketTokenBalance = marketToken.balanceOf(address(vault));
         uint256 finalUsdcBalance = usdc.balanceOf(address(vault));
 
+        assertLt(finalMarketTokenBalance, initialMarketTokenBalance, "Market token balance should have decreased");
+        assertGt(finalUsdcBalance, initialUsdcBalance, "USDC balance should have increased");
         assertLt(finalMarketTokenBalance, initialMarketTokenBalance, "Market token balance should have decreased");
         assertGt(finalUsdcBalance, initialUsdcBalance, "USDC balance should have increased");
         

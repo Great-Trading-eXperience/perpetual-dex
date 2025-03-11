@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
+import "forge-std/Test.sol";
+
 import "./../interfaces/IRouter.sol";
 import "./../interfaces/IDataStore.sol";
 import "./../interfaces/IDepositHandler.sol";
@@ -50,6 +52,8 @@ contract AssetVault {
     address public immutable depositHandler;
     address public immutable depositVault;
     address public immutable withdrawVault;
+    address public immutable marketFactory;
+    address public immutable wnt;
     uint256 public depositNonce;
 
     // Events
@@ -64,14 +68,22 @@ contract AssetVault {
 
     constructor(
         address _router,
+        address _dataStore,
         address _depositHandler,
         address _depositVault,
-        address _withdrawVault
+        address _withdrawVault,
+        address _marketFactory,
+        address _wnt
     ) {
         router = _router;
+        dataStore = _dataStore;
         depositHandler = _depositHandler;
         depositVault = _depositVault;
+        marketFactory = _marketFactory;
         withdrawVault = _withdrawVault;
+        wnt = _wnt;
+        // Approve router to spend WNT for execution fees
+        IERC20(_wnt).approve(_router, type(uint256).max);
     }
 
     modifier onlyInitialized() {
@@ -87,19 +99,19 @@ contract AssetVault {
     function initialize(
         address _curator,
         address _asset,
-        string calldata _name,
-        string calldata _symbol
+        string memory _name,
+        string memory _symbol
     ) external {
         require(!initialized, "Already initialized");
-        require(_curator != address(0), "Invalid curator address");
-        require(_asset != address(0), "Invalid asset address");
         
         curator = _curator;
         asset = _asset;
         name = _name;
         symbol = _symbol;
         decimals = ERC20(_asset).decimals();
-        lastApyUpdate = block.timestamp;
+        
+        IERC20(_asset).approve(router, type(uint256).max);
+        
         initialized = true;
     }
 
@@ -170,14 +182,14 @@ contract AssetVault {
     }
 
     // Market management functions
-    function addMarket(address _market, uint256 _allocationPercentage) external onlyCurator onlyInitialized {
+    function addMarket(address _market, uint256 _allocationPercentage) external onlyCurator {
         require(_market != address(0), "Invalid market address");
-        require(_allocationPercentage <= 10000, "Percentage exceeds 100%");
-        require(marketIndexes[_market] == 0, "Market already added");
+        require(_allocationPercentage <= 10000, "Invalid allocation percentage");
         
-        uint256 totalAllocation = getTotalAllocation();
-        require(totalAllocation + _allocationPercentage <= 10000, "Total allocation exceeds 100%");
+        uint256 index = marketIndexes[_market];
+        require(index == 0, "Market already exists");
         
+        // Add market to array
         markets.push(MarketAllocation({
             market: _market,
             allocationPercentage: _allocationPercentage,
@@ -187,11 +199,20 @@ contract AssetVault {
         
         marketIndexes[_market] = markets.length;
         
-        emit MarketAdded(_market, _allocationPercentage);
+        // Calculate allocation amount
+        uint256 balance = IERC20(asset).balanceOf(address(this));
+        uint256 allocationAmount = (balance * _allocationPercentage) / 10000;
         
-        if (_allocationPercentage > 0) {
-            _rebalanceAllocations();
+        // Approve market token spending for both deposit and withdrawal
+        IERC20(asset).approve(_market, allocationAmount);
+        IERC20(_market).approve(router, type(uint256).max);
+        
+        // Allocate funds if we have balance
+        if (allocationAmount > 0) {
+            _allocateToMarket(_market, allocationAmount);
         }
+        
+        emit MarketAdded(_market, _allocationPercentage);
     }
 
     function updateMarket(
@@ -220,7 +241,7 @@ contract AssetVault {
     // Internal functions
     function _rebalanceAllocations() internal {
         if (totalAssets == 0) return;
-        
+
         bool hasActiveMarkets = false;
         for (uint256 i = 0; i < markets.length; i++) {
             if (markets[i].isActive) {
@@ -260,6 +281,9 @@ contract AssetVault {
 
     function _allocateToMarket(address _market, uint256 _amount) internal {
         if (_amount == 0) return;
+
+        bytes32 marketKey = IDataStore(dataStore).getMarketKey(_market);
+        IMarketFactory.Market memory market = IDataStore(dataStore).getMarket(marketKey);
         
         IERC20(asset).approve(_market, _amount);
         
@@ -281,15 +305,14 @@ contract AssetVault {
                 receiver: address(this),
                 uiFeeReceiver: address(0),
                 market: _market,
-                initialLongToken: address(0),
-                initialShortToken: asset,
+                initialLongToken: market.longToken,
+                initialShortToken: market.shortToken,
                 minMarketTokens: 0,
                 executionFee: 1e6
             }))
         );
 
         IRouter(router).multicall(depositData);
-        IDepositHandler(depositHandler).executeDeposit(depositNonce++);
         
         uint256 index = marketIndexes[_market];
         markets[index - 1].allocatedAmount += _amount;
@@ -311,6 +334,8 @@ contract AssetVault {
         bytes32 marketKey = IDataStore(dataStore).getMarketKey(_market);
         IMarketFactory.Market memory market = IDataStore(dataStore).getMarket(marketKey);
 
+        uint256 realDeallocateAmount = ERC20(_market).balanceOf(address(this)) * _amount / markets[index].allocatedAmount;
+
         // Create withdraw params
         bytes[] memory withdrawData = new bytes[](3);
         uint256 executionFee = 1e6;
@@ -327,7 +352,7 @@ contract AssetVault {
             IRouter.sendTokens.selector,
             address(_market),
             address(withdrawVault),
-            _amount
+            realDeallocateAmount
         );
 
         // 3. Create withdraw
@@ -335,9 +360,9 @@ contract AssetVault {
             receiver: address(this),
             uiFeeReceiver: address(0),
             marketToken: _market,
-            longToken: address(0),
-            shortToken: asset,
-            marketTokenAmount: _amount,
+            longToken: market.longToken,
+            shortToken: market.shortToken,
+            marketTokenAmount: realDeallocateAmount,
             longTokenAmount: market.longToken == asset ? 100 : 0,
             shortTokenAmount: market.shortToken == asset ? 100 : 0,
             executionFee: executionFee
