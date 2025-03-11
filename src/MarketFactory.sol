@@ -6,7 +6,9 @@ import "./DataStore.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MarketFactory {
-    event MarketCreated(string marketName, address indexed marketToken, address indexed longToken, address indexed shortToken);
+    event MarketCreated(
+        string marketName, address indexed marketToken, address indexed longToken, address indexed shortToken
+    );
 
     error MarketAlreadyExists(address longToken, address shortToken);
 
@@ -14,6 +16,12 @@ contract MarketFactory {
         address marketToken;
         address longToken;
         address shortToken;
+        Status status;
+    }
+
+    enum Status {
+        INACTIVE,
+        ACTIVE
     }
 
     address public dataStore;
@@ -27,20 +35,25 @@ contract MarketFactory {
         string memory shortSymbol = ERC20(_shortToken).symbol();
         string memory marketName = string.concat("GTX_", longSymbol, "_", shortSymbol);
         MarketToken marketToken = new MarketToken(marketName, marketName);
-        Market memory existingMarket = DataStore(dataStore).getMarket(keccak256(abi.encodePacked(_longToken, _shortToken)));
+        Market memory existingMarket =
+            DataStore(dataStore).getMarket(keccak256(abi.encodePacked(_longToken, _shortToken)));
         if (existingMarket.marketToken != address(0)) {
             revert MarketAlreadyExists(_longToken, _shortToken);
         }
-        DataStore(dataStore).setMarket(keccak256(abi.encodePacked(_longToken, _shortToken)), Market({
-            marketToken: address(marketToken),
-            longToken: _longToken,
-            shortToken: _shortToken
-        }));
-        
+        DataStore(dataStore).setMarket(
+            keccak256(abi.encodePacked(_longToken, _shortToken)),
+            Market({
+                marketToken: address(marketToken),
+                longToken: _longToken,
+                shortToken: _shortToken,
+                status: Status.INACTIVE
+            })
+        );
+
         DataStore(dataStore).setMarketKey(address(marketToken), keccak256(abi.encodePacked(_longToken, _shortToken)));
-        
+
         emit MarketCreated(marketName, address(marketToken), _longToken, _shortToken);
-    
+
         return address(marketToken);
     }
 }
