@@ -5,6 +5,8 @@ import "./DataStore.sol";
 import "./MarketFactory.sol";
 import "./MarketToken.sol";
 import "./Oracle.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract MarketHandler {
     address public dataStore;
@@ -77,8 +79,22 @@ contract MarketHandler {
     ) public view returns (uint256) {
         MarketState memory state = getMarketState(market);
         uint256 marketTokenSupply = MarketToken(market).totalSupply();
-        uint256 depositValueInUsd = (longTokenAmount * Oracle(oracle).getPrice(state.longToken)) + (shortTokenAmount * Oracle(oracle).getPrice(state.shortToken));
-        
+
+        uint256 longTokenDecimals = IERC20Metadata(state.longToken).decimals(); 
+        uint256 shortTokenDecimals = IERC20Metadata(state.shortToken).decimals();
+
+        uint256 longTokenValueInUsd = Oracle(oracle).getPrice(state.longToken) * longTokenAmount / (10 ** longTokenDecimals);
+        uint256 shortTokenValueInUsd = Oracle(oracle).getPrice(state.shortToken) * shortTokenAmount / (10 ** shortTokenDecimals);
+
+        uint256 depositValueInUsd = longTokenValueInUsd + shortTokenValueInUsd;
+
+        console.log("getMarketTokens");
+        console.log("longTokenAmount", longTokenAmount);
+        console.log("shortTokenAmount", shortTokenAmount);
+        console.log("longTokenValueInUsd", longTokenValueInUsd);
+        console.log("shortTokenValueInUsd", shortTokenValueInUsd);
+        console.log("depositValueInUsd", depositValueInUsd);
+
         if (marketTokenSupply == 0) {
             return depositValueInUsd;
         }
@@ -95,9 +111,22 @@ contract MarketHandler {
         uint256 longTokenPrice = Oracle(oracle).getPrice(state.longToken);
         uint256 shortTokenPrice = Oracle(oracle).getPrice(state.shortToken);
 
+        // Get token decimals   
+        uint256 longTokenDecimals = IERC20Metadata(state.longToken).decimals();
+        uint256 shortTokenDecimals = IERC20Metadata(state.shortToken).decimals();
+
         // Calculate USD value of pool's tokens
-        uint256 longTokenUsd = (state.longTokenAmount * longTokenPrice) / 1e18;
-        uint256 shortTokenUsd = (state.shortTokenAmount * shortTokenPrice) / 1e18;
+        uint256 longTokenUsd = (state.longTokenAmount * longTokenPrice) / (10 ** longTokenDecimals);
+        uint256 shortTokenUsd = (state.shortTokenAmount * shortTokenPrice) / (10 ** shortTokenDecimals);
+
+        console.log("getPoolValueUsd");
+        console.log("longTokenAmount", state.longTokenAmount);
+        console.log("shortTokenAmount", state.shortTokenAmount);
+        console.log("longTokenPrice", longTokenPrice);
+        console.log("shortTokenPrice", shortTokenPrice);
+        console.log("longTokenUsd", longTokenUsd);
+        console.log("shortTokenUsd", shortTokenUsd);
+        console.log("poolValueUsd", longTokenUsd + shortTokenUsd);
 
         return longTokenUsd + shortTokenUsd;
     }
@@ -173,5 +202,60 @@ contract MarketHandler {
             longTokenOpenInterest: longTokenOpenInterest,
             shortTokenOpenInterest: shortTokenOpenInterest
         });
+    }
+
+    function handleWithdraw(
+        address receiver,
+        address marketToken,
+        uint256 marketTokenAmount,
+        uint256 longTokenAmount,
+        uint256 shortTokenAmount
+    ) external {
+        MarketState memory state = getMarketState(marketToken);
+        
+        // Get total pool value in USD (in 1e18)
+        uint256 poolValueUsd = getPoolValueUsd(marketToken);
+        uint256 marketTokenSupply = MarketToken(marketToken).totalSupply();
+        
+        // Calculate the proportion of the pool being withdrawn in USD (in 1e18)
+        uint256 withdrawValueUsd = (marketTokenAmount * poolValueUsd) / marketTokenSupply;
+        
+        // Get token prices (in 1e18)
+        uint256 longTokenPrice = Oracle(oracle).getPrice(state.longToken);  // 3000 * 1e18
+        uint256 shortTokenPrice = Oracle(oracle).getPrice(state.shortToken); // 1 * 1e18
+        
+        // Calculate proportions (in basis points, 10000 = 100%)
+        uint256 totalAmount = longTokenAmount + shortTokenAmount;
+        uint256 longTokenProportion = (longTokenAmount * 10000) / totalAmount;
+        uint256 shortTokenProportion = (shortTokenAmount * 10000) / totalAmount;
+        
+        // Calculate USD value for each token based on proportions (in 1e18)
+        uint256 longTokenValueUsd = (withdrawValueUsd * longTokenProportion) / 10000;
+        uint256 shortTokenValueUsd = (withdrawValueUsd * shortTokenProportion) / 10000;
+        
+        // Convert USD values back to token amounts
+        // For long token (WNT): 
+        uint256 longTokenOutput = (longTokenValueUsd * (10 ** IERC20Metadata(state.longToken).decimals())) / longTokenPrice;
+        
+        // For short token (USDC):
+        uint256 shortTokenOutput = (shortTokenValueUsd * (10 ** IERC20Metadata(state.shortToken).decimals())) / shortTokenPrice;
+        
+        console.log("Withdraw calculation:");
+        console.log("withdrawValueUsd", withdrawValueUsd);
+        console.log("longTokenValueUsd", longTokenValueUsd);
+        console.log("shortTokenValueUsd", shortTokenValueUsd);
+        console.log("longTokenPrice", longTokenPrice);
+        console.log("shortTokenPrice", shortTokenPrice);
+        console.log("longTokenOutput", longTokenOutput);
+        console.log("shortTokenOutput", shortTokenOutput);
+
+        console.log("longTokenBalance", IERC20(state.longToken).balanceOf(marketToken));
+        console.log("shortTokenBalance", IERC20(state.shortToken).balanceOf(marketToken));
+                
+        // Transfer tokens to receiver
+        MarketToken(marketToken).syncBalance(state.longToken);
+        MarketToken(marketToken).syncBalance(state.shortToken);
+        MarketToken(marketToken).transferOut(state.longToken, receiver, longTokenOutput);
+        MarketToken(marketToken).transferOut(state.shortToken, receiver, shortTokenOutput);
     }
 }

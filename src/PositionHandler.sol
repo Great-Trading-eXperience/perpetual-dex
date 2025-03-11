@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 import "./MarketHandler.sol";
 import "./OrderHandler.sol";
@@ -219,9 +220,10 @@ contract PositionHandler {
 
         uint256 hoursElapsed = (block.timestamp - position.increasedAtTime) /
             3600;
+        uint256 tokenDecimals = IERC20Metadata(position.collateralToken).decimals();
         int256 periodFundingFee = (int256(position.sizeInTokens) *
             fundingFee *
-            int256(hoursElapsed)) / 1e18;
+            int256(hoursElapsed)) / int256(10 ** tokenDecimals);
 
         // 2. Calculate borrowing fee
         uint256 currentUtilizationRate = position.isLong

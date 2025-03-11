@@ -5,8 +5,10 @@ import "./MarketFactory.sol";
 import "./DepositHandler.sol";
 import "./OrderHandler.sol";
 import "./PositionHandler.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./WithdrawHandler.sol";
 
-contract DataStore {
+contract DataStore is Ownable {
     mapping(bytes32 => MarketFactory.Market) public markets;
     mapping(address => bytes32) public marketKeys;
     mapping(address => int256) public cumulativeFundingFee;
@@ -21,11 +23,30 @@ contract DataStore {
 
     mapping(TransactionType => uint256) public transactionNonces;
 
+    mapping(bytes32 => uint256) public uintValues;
+    mapping(bytes32 => int256) public intValues;
+    mapping(bytes32 => address) public addressValues;
+    mapping(bytes32 => bool) public boolValues;
+    mapping(bytes32 => string) public stringValues;
+    mapping(bytes32 => bytes32) public bytes32Values;
+    
+    mapping(uint256 => WithdrawHandler.Withdraw) public withdraws;
+    
+    bool public initialized;
+
     enum TransactionType {
         Deposit,
         Withdraw,
         Order,
         Position
+    }
+
+    constructor() Ownable(msg.sender) {}
+
+    function initialize(address _owner) external {
+        require(!initialized, "Already initialized");
+        _transferOwnership(_owner);
+        initialized = true;
     }
 
     function setMarket(bytes32 key, MarketFactory.Market memory market) external {
@@ -98,5 +119,13 @@ contract DataStore {
 
     function incrementNonce(TransactionType _transactionType) external {
         transactionNonces[_transactionType]++;
+    }
+
+    function setWithdraw(uint256 key, WithdrawHandler.Withdraw memory withdraw) external {
+        withdraws[key] = withdraw;
+    }
+
+    function getWithdraw(uint256 key) external view returns (WithdrawHandler.Withdraw memory) {
+        return withdraws[key];
     }
 }
