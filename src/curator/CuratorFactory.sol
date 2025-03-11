@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 
-import "./CurratorRegistry.sol";
-import "./Currator.sol";
+import "./CuratorRegistry.sol";
+import "./Curator.sol";
 
 contract CuratorFactory is Ownable {
     using Clones for address;

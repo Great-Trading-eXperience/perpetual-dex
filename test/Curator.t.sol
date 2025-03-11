@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/curator/CurratorRegistry.sol";
-import "../src/curator/CurratorFactory.sol";
-import "../src/curator/Currator.sol";
+import "../src/curator/CuratorRegistry.sol";
+import "../src/curator/CuratorFactory.sol";
+import "../src/curator/Curator.sol";
 import "../src/curator/AssetVault.sol";
 import "../src/curator/VaultFactory.sol";
 import "../src/Router.sol";
@@ -31,10 +31,13 @@ contract MockCurator is Curator {
 contract MockLongVault is AssetVault {
     constructor(
         address _router,
+        address _dataStore,
         address _depositHandler,
         address _depositVault,
-        address _marketFactory
-    ) AssetVault(_router, _depositHandler, _depositVault, _marketFactory) {}
+        address _withdrawVault,
+        address _marketFactory,
+        address _wnt
+    ) AssetVault(_router, _dataStore, _depositHandler, _depositVault, _withdrawVault, _marketFactory, _wnt) {}
 }
 
 contract MockShortVault is AssetVault {
@@ -42,8 +45,11 @@ contract MockShortVault is AssetVault {
         address _router,
         address _depositHandler,
         address _depositVault,
-        address _marketFactory
-    ) AssetVault(_router, _depositHandler, _depositVault, _marketFactory) {}
+        address _withdrawVault,
+        address _marketFactory,
+        address _wnt,
+        address _dataStore
+    ) AssetVault(_router, _dataStore, _depositHandler, _depositVault, _withdrawVault, _marketFactory, _wnt) {}
 }
 
 contract CuratorTest is Test {
@@ -56,6 +62,7 @@ contract CuratorTest is Test {
     Router public router;
     DepositHandler public depositHandler;
     DepositVault public depositVault;
+    WithdrawVault public withdrawVault;
     OrderHandler public orderHandler;
     OrderVault public orderVault;
     DataStore public dataStore;
@@ -76,6 +83,7 @@ contract CuratorTest is Test {
 
         // Deploy core protocol contracts in correct order
         depositVault = new DepositVault();
+        withdrawVault = new WithdrawVault();
         orderVault = new OrderVault();
         dataStore = new DataStore();
         dataStore.transferOwnership(owner);
@@ -142,14 +150,19 @@ contract CuratorTest is Test {
             address(router),
             address(depositHandler),
             address(depositVault),
-            address(marketFactory)
+            address(withdrawVault),
+            address(marketFactory),
+            address(weth),
+            address(dataStore)
         );
         vaultFactory = new VaultFactory(
             address(vaultImpl),
             address(registry),
+            address(dataStore),
             address(router),
             address(depositHandler),
-            address(depositVault)
+            address(depositVault),
+            address(withdrawVault)
         );
 
         // Setup initial state
@@ -193,7 +206,8 @@ contract CuratorTest is Test {
             address(usdc),
             "USDC Vault",
             "vUSDC",
-            address(marketFactory)
+            address(marketFactory),
+            address(weth)
         );
         
         AssetVault shortVault = AssetVault(vault);
@@ -216,7 +230,8 @@ contract CuratorTest is Test {
             address(weth),
             "WETH Vault",
             "vWETH",
-            address(marketFactory)
+            address(marketFactory),
+            address(weth)
         );
         vm.stopPrank();
 
@@ -248,7 +263,8 @@ contract CuratorTest is Test {
             address(weth),
             "WETH Vault",
             "vWETH",
-            address(marketFactory)
+            address(marketFactory),
+            address(weth)
         );
         vm.stopPrank();
 
