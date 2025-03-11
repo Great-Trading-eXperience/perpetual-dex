@@ -34,14 +34,14 @@ endef
 deploy-all: build
 	$(call forge_script,script/Deploy.s.sol,)
 
-deploy-market: build
-	$(call forge_script,script/DeployMarket.s.sol,)
-
 deploy-mocks: build
 	$(call forge_script,script/DeployTokenMocks.s.sol,)
 
 create-market: build
 	$(call forge_script,script/CreateMarket.s.sol,)
+
+check-market: build
+	$(call forge_script,script/CheckMarket.s.sol,)
 
 # Define a target to verify core deployment using the specified network
 deploy-verify-all: build
