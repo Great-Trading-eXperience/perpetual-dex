@@ -26,15 +26,9 @@ contract ExecuteOrderScript is Script {
         address[] memory tokens = new address[](2);
         tokens[0] = wnt;
         tokens[1] = usdc;
-
-        Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](2);
         
         uint256 wntPrice = 3000 * 1e18;  // $3000 per WNT
         uint256 usdcPrice = 1 * 1e18;    // $1 per USDC
-
-        // Get current block and timestamp
-        uint256 timestamp = block.timestamp;
-        uint256 blockNumber = block.number;
 
         // Sign WNT price
         // Set prices in oracle

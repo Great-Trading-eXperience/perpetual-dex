@@ -27,7 +27,19 @@ contract ExecuteDepositScript is Script {
         console.log("Execution fee:", deposit.executionFee);
 
         // Execute the deposit
-        DepositHandler(depositHandler).executeDeposit(depositKey);
+        // Get total number of deposits
+        uint256 depositCount = DataStore(dataStore).getNonce(DataStore.TransactionType.Deposit);
+        
+        console.log("Total deposits to execute:", depositCount);
+
+        // Execute all deposits
+        for(uint256 i = 0; i < depositCount; i++) {
+            try DepositHandler(depositHandler).executeDeposit(i) {
+                console.log("Successfully executed deposit", i);
+            } catch {
+                console.log("Failed to execute deposit", i);
+            }
+        }
 
         console.log("Deposit executed successfully");
         console.log("Keeper received execution fee:", deposit.executionFee);

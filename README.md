@@ -1,3 +1,26 @@
+# Overview
+
+The GTX Perp Dex is a revolutionary decentralized exchange for perpetual futures trading that emphasizes true decentralization and permissionless access.
+
+# Deployed Contracts
+- **Router**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Market Factory**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Curator Factory**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Curator Vault Factory**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Order Vault**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Order Handler**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Position Handler**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Deposit Handler**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Withdraw Handler**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Market Handler**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+- **Data Store**: 0x777f7b7f1757ee06128e4840d7b503a75a7a06b4
+
+# Key Features
+- **Fully permissionless token listing**: Anyone can deploy and list their own tokens for perpetual futures trading without requiring approval
+- **Decentralized execution**: The protocol is powered by a permissionless keeper network where anyone can become a keeper to execute orders and earn execution fees
+- **Innovative price oracle**: Mark prices are secured through AVS (Actively Validated Service) and zkTLS technology, ensuring reliable and manipulation-resistant price feeds while maintaining decentralization
+- **Curator Vaults**: Curator Vaults are a new way to manage and grow your crypto portfolio. They are a collection of vaults that are managed by a curator. The curator is a trusted entity that is responsible for managing the vaults and maintaining risk parameters to ensure the safety of user funds through careful monitoring and adjustment.
+
 # Scripts
 
 ## 1. Deploy Tokens
@@ -67,21 +90,3 @@ forge script script/DeployCurator.s.sol --rpc-url $RPC_URL --private-key $PRIVAT
 ## 15. Deposit to Curator Vaults
 
 forge script script/DepositToCuratorVaults.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
-
-# Deployments
-
-## Rise Testnet
-
-ORACLE_ADDRESS=0x1c0e607b05Ca3409a3C3E38aFa122d5F84e8d8ea
-DATA_STORE_ADDRESS=0xccd7b6Db041f807f93C47c9FcF93dbB9dB5AB163
-ORDER_VAULT_ADDRESS=0x85386b4ebBE55024aECcfd8A5fD215a793890730
-DEPOSIT_VAULT_ADDRESS=0x0F29ebbC3F40a298026CFd1d76EcCC30Ed1b897F
-ORDER_HANDLER_ADDRESS=0x7814362bc8767568f5F1e2829Fc4B9ccDdC8c986
-POSITION_HANDLER_ADDRESS=0x685C70bB196c59b7024FC4409194b0cFdBe4D342
-MARKET_HANDLER_ADDRESS=0x84F200EBE8d5d370eb5b15cA6B6d2b4E652fdd4f
-DEPOSIT_HANDLER_ADDRESS=0x08d649c08a02c2AC340111f3E39283883f9Bcf6E
-MARKET_FACTORY_ADDRESS=0xeAC6F7C4180DA5b41B60FaeC194fA86Ff26636eA
-ROUTER_ADDRESS=0xeB69E0A689e8a6fbdfA72b9d2882481512c783B7
-WETH_USDC_MARKET_ADDRESS=0x217c52954Ef4a9F7B334333FDA22C609Ff3e62Bc
-
-INDEXER=https://perpetual-indexer.renakaagusta.dev

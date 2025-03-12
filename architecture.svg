@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700">
+  <!-- Background -->
+  <rect width="1000" height="700" fill="#000000" />
+
+  <!-- Core Protocol Layer Section -->
+  <rect x="50" y="20" width="900" height="180" rx="10" fill="rgba(35, 121, 219, 0.1)" stroke="#2379DB" stroke-width="2" />
+  <text x="500" y="45" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#2CB3FF">Core Protocol Layer</text>
+  
+  <!-- Core Components -->
+  <rect x="100" y="70" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="165" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Router</text>
+  
+  <rect x="250" y="70" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="315" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Market Factory</text>
+  
+  <rect x="400" y="70" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="465" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Curator Factory</text>
+  
+  <rect x="550" y="70" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="615" y="95" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Curator Vault</text>
+  <text x="615" y="115" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Factory</text>
+  
+  <rect x="700" y="70" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="765" y="105" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Order Vault</text>
+  
+  <rect x="100" y="140" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="165" y="175" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Data Store</text>
+  
+  <!-- Handler Layer Section -->
+  <rect x="50" y="220" width="900" height="130" rx="10" fill="rgba(35, 121, 219, 0.1)" stroke="#2379DB" stroke-width="2" />
+  <text x="500" y="245" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#2CB3FF">Handler Layer</text>
+  
+  <!-- Handler Components -->
+  <rect x="100" y="270" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="165" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Order Handler</text>
+  
+  <rect x="250" y="270" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="315" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Position Handler</text>
+  
+  <rect x="400" y="270" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="465" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Deposit Handler</text>
+  
+  <rect x="550" y="270" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="615" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Withdraw Handler</text>
+  
+  <rect x="700" y="270" width="130" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="765" y="305" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Market Handler</text>
+  
+  <!-- Trading Infrastructure Section -->
+  <rect x="50" y="370" width="440" height="160" rx="10" fill="rgba(35, 121, 219, 0.1)" stroke="#2379DB" stroke-width="2" />
+  <text x="270" y="395" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#2CB3FF">Trading Infrastructure</text>
+  
+  <!-- Trading Components -->
+  <rect x="100" y="420" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="180" y="445" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Permissionless</text>
+  <text x="180" y="465" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Markets</text>
+  
+  <rect x="280" y="420" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="360" y="445" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Perpetual</text>
+  <text x="360" y="465" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Futures Trading</text>
+  
+  <!-- Oracle Infrastructure Section -->
+  <rect x="510" y="370" width="440" height="160" rx="10" fill="rgba(35, 121, 219, 0.1)" stroke="#2379DB" stroke-width="2" />
+  <text x="730" y="395" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#2CB3FF">Oracle Infrastructure</text>
+  
+  <!-- Oracle Components -->
+  <rect x="560" y="420" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="640" y="445" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">AVS</text>
+  <text x="640" y="465" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Price Oracle</text>
+  
+  <rect x="740" y="420" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="820" y="445" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">zkTLS</text>
+  <text x="820" y="465" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Technology</text>
+  
+  <!-- Curator System Section -->
+  <rect x="50" y="550" width="440" height="130" rx="10" fill="rgba(35, 121, 219, 0.1)" stroke="#2379DB" stroke-width="2" />
+  <text x="270" y="575" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#2CB3FF">Curator System</text>
+  
+  <!-- Curator Components -->
+  <rect x="100" y="600" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="180" y="635" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Curator Vaults</text>
+  
+  <rect x="280" y="600" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="360" y="625" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Risk</text>
+  <text x="360" y="645" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Parameters</text>
+  
+  <!-- Keeper Network Section -->
+  <rect x="510" y="550" width="440" height="130" rx="10" fill="rgba(35, 121, 219, 0.1)" stroke="#2379DB" stroke-width="2" />
+  <text x="730" y="575" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" fill="#2CB3FF">Keeper Network</text>
+  
+  <!-- Keeper Components -->
+  <rect x="560" y="600" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="640" y="625" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Permissionless</text>
+  <text x="640" y="645" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Keepers</text>
+  
+  <rect x="740" y="600" width="160" height="60" rx="5" fill="rgba(44, 179, 255, 0.1)" stroke="#2CB3FF" stroke-width="1" />
+  <text x="820" y="625" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Execution Fee</text>
+  <text x="820" y="645" font-family="Arial" font-size="14" text-anchor="middle" fill="#FFFFFF">Incentives</text>
+</svg>
