@@ -19,7 +19,7 @@ import "../src/DepositVault.sol";
 
 contract MockToken is ERC20 {
     constructor() ERC20("Mock", "MOCK") {
-        _mint(msg.sender, 1000000 * 1e18);
+        _mint(msg.sender, 1_000_000 * 1e18);
     }
 }
 
@@ -65,11 +65,8 @@ contract OrderTest is Test {
 
         // Deploy handlers in correct order
         marketHandler = new MarketHandler(address(dataStore), address(oracle));
-        positionHandler = new PositionHandler(
-            address(dataStore),
-            address(oracle),
-            address(marketHandler)
-        );
+        positionHandler =
+            new PositionHandler(address(dataStore), address(oracle), address(marketHandler));
         orderHandler = new OrderHandler(
             address(dataStore),
             address(orderVault),
@@ -87,19 +84,13 @@ contract OrderTest is Test {
         marketHandler.setPositionHandler(address(positionHandler));
 
         // Create market and get market token
-        address marketTokenAddress = marketFactory.createMarket(
-            address(wnt),
-            address(usdc)
-        );
+        address marketTokenAddress = marketFactory.createMarket(address(wnt), address(usdc));
         marketToken = MarketToken(marketTokenAddress);
 
         // Deploy deposit related contracts
         depositVault = new DepositVault();
         depositHandler = new DepositHandler(
-            address(dataStore),
-            address(depositVault),
-            address(marketHandler),
-            address(wnt)
+            address(dataStore), address(depositVault), address(marketHandler), address(wnt)
         );
 
         // Deploy Router last since it needs other contracts
@@ -109,12 +100,14 @@ contract OrderTest is Test {
             address(0),
             address(orderHandler),
             address(wnt),
-            address(positionHandler)
+            address(positionHandler),
+            address(marketFactory),
+            address(oracle)
         );
 
         // Fund deppsitor
-        wnt.transfer(depositor, 10000 * 1e18);
-        usdc.transfer(depositor, 10000 * 1e18);
+        wnt.transfer(depositor, 10_000 * 1e18);
+        usdc.transfer(depositor, 10_000 * 1e18);
         vm.deal(depositor, 100 ether);
 
         // Approve tokens
@@ -124,8 +117,8 @@ contract OrderTest is Test {
         vm.stopPrank();
 
         // Fund keeper
-        wnt.transfer(keeper, 10000 * 1e18);
-        usdc.transfer(keeper, 10000 * 1e18);
+        wnt.transfer(keeper, 10_000 * 1e18);
+        usdc.transfer(keeper, 10_000 * 1e18);
         vm.deal(keeper, 100 ether);
 
         // Approve tokens
@@ -154,33 +147,29 @@ contract OrderTest is Test {
         uint256 triggerPrice = 3000 * 1e18;
         uint256 acceptablePrice = (triggerPrice * 110) / 100;
 
-        OrderHandler.CreateOrderParams memory params = OrderHandler
-            .CreateOrderParams({
-                receiver: trader,
-                cancellationReceiver: trader,
-                callbackContract: address(0),
-                uiFeeReceiver: address(0),
-                market: address(marketToken),
-                initialCollateralToken: address(wnt),
-                orderType: OrderHandler.OrderType.MarketIncrease,
-                sizeDeltaUsd: sizeDeltaUsd,
-                initialCollateralDeltaAmount: initialCollateralDeltaAmount,
-                triggerPrice: triggerPrice,
-                acceptablePrice: acceptablePrice,
-                executionFee: executionFee,
-                validFromTime: 0,
-                isLong: true,
-                autoCancel: false
-            });
+        OrderHandler.CreateOrderParams memory params = OrderHandler.CreateOrderParams({
+            receiver: trader,
+            cancellationReceiver: trader,
+            callbackContract: address(0),
+            uiFeeReceiver: address(0),
+            market: address(marketToken),
+            initialCollateralToken: address(wnt),
+            orderType: OrderHandler.OrderType.MarketIncrease,
+            sizeDeltaUsd: sizeDeltaUsd,
+            initialCollateralDeltaAmount: initialCollateralDeltaAmount,
+            triggerPrice: triggerPrice,
+            acceptablePrice: acceptablePrice,
+            executionFee: executionFee,
+            validFromTime: 0,
+            isLong: true,
+            autoCancel: false
+        });
 
         bytes[] memory multicallData = new bytes[](3);
 
         // Send WNT for execution fee
-        multicallData[0] = abi.encodeWithSelector(
-            Router.sendWnt.selector,
-            address(orderVault),
-            executionFee
-        );
+        multicallData[0] =
+            abi.encodeWithSelector(Router.sendWnt.selector, address(orderVault), executionFee);
 
         // Send collateral token
         multicallData[1] = abi.encodeWithSelector(
@@ -191,20 +180,14 @@ contract OrderTest is Test {
         );
 
         // Create order
-        multicallData[2] = abi.encodeWithSelector(
-            Router.createOrder.selector,
-            params
-        );
+        multicallData[2] = abi.encodeWithSelector(Router.createOrder.selector, params);
 
         router.multicall(multicallData);
 
         OrderHandler.Order memory order = dataStore.getOrder(0);
         assertEq(order.account, trader);
         assertEq(order.sizeDeltaUsd, initialCollateralDeltaAmount * 3000 * 10);
-        assertEq(
-            order.initialCollateralDeltaAmount,
-            initialCollateralDeltaAmount
-        );
+        assertEq(order.initialCollateralDeltaAmount, initialCollateralDeltaAmount);
 
         vm.stopPrank();
     }
@@ -227,37 +210,29 @@ contract OrderTest is Test {
         vm.startPrank(depositor);
 
         // Create deposit params
-        DepositHandler.CreateDepositParams memory params = DepositHandler
-            .CreateDepositParams({
-                receiver: depositor,
-                uiFeeReceiver: address(0),
-                market: address(marketToken),
-                initialLongToken: address(wnt),
-                initialShortToken: address(usdc),
-                minMarketTokens: 0,
-                executionFee: 1 * 10e6
-            });
+        DepositHandler.CreateDepositParams memory params = DepositHandler.CreateDepositParams({
+            receiver: depositor,
+            uiFeeReceiver: address(0),
+            market: address(marketToken),
+            initialLongToken: address(wnt),
+            initialShortToken: address(usdc),
+            minMarketTokens: 0,
+            executionFee: 1 * 10e6
+        });
 
         // Prepare multicall data for deposit
         bytes[] memory depositData = new bytes[](4);
 
         // 1. Transfer WNT for execution fee
-        depositData[0] = abi.encodeCall(
-            Router.sendWnt,
-            (address(depositVault), 1 * 10e6)
-        );
+        depositData[0] = abi.encodeCall(Router.sendWnt, (address(depositVault), 1 * 10e6));
 
         // 2. Transfer WNT as long token (10 WNT)
-        depositData[1] = abi.encodeCall(
-            Router.sendTokens,
-            (address(wnt), address(depositVault), 100 * 1e18)
-        );
+        depositData[1] =
+            abi.encodeCall(Router.sendTokens, (address(wnt), address(depositVault), 100 * 1e18));
 
         // 3. Transfer USDC as short token (3,000 USDC)
-        depositData[2] = abi.encodeCall(
-            Router.sendTokens,
-            (address(usdc), address(depositVault), 3000 * 1e18)
-        );
+        depositData[2] =
+            abi.encodeCall(Router.sendTokens, (address(usdc), address(depositVault), 3000 * 1e18));
 
         // 4. Create deposit
         depositData[3] = abi.encodeCall(Router.createDeposit, (params));
@@ -268,8 +243,8 @@ contract OrderTest is Test {
     }
 
     function testExecuteOrder() public {
-        uint256 wntPrice = 3000 * 1e18;  // $3000 per WNT
-        uint256 usdcPrice = 1 * 1e18;    // $1 per USDC
+        uint256 wntPrice = 3000 * 1e18; // $3000 per WNT
+        uint256 usdcPrice = 1 * 1e18; // $1 per USDC
 
         // Set oracle prices first
         setOraclePrices(wntPrice, usdcPrice);
@@ -289,7 +264,7 @@ contract OrderTest is Test {
         uint256 keeperBalanceBefore = IERC20(wnt).balanceOf(keeper);
         uint256 marketTokenLongBefore = IERC20(wnt).balanceOf(address(marketToken));
         uint256 traderLongBefore = IERC20(wnt).balanceOf(trader);
-        
+
         // Execute order as keeper
         vm.startPrank(keeper);
         orderHandler.executeOrder(0); // First order has key 0
@@ -307,19 +282,22 @@ contract OrderTest is Test {
         );
 
         // Verify position was created
-        bytes32 positionKey = keccak256(
-            abi.encodePacked(trader, address(marketToken), address(wnt))
-        );
+        bytes32 positionKey =
+            keccak256(abi.encodePacked(trader, address(marketToken), address(wnt)));
         PositionHandler.Position memory position = dataStore.getPosition(positionKey);
 
-        uint256 positionFee = (position.sizeInTokens * positionHandler.POSITION_FEE()) / 10000;
+        uint256 positionFee = (position.sizeInTokens * positionHandler.POSITION_FEE()) / 10_000;
 
         // Verify position details
         assertEq(position.account, trader, "Position account should be trader");
         assertEq(position.market, address(marketToken), "Position market should be correct");
         assertEq(position.collateralToken, address(wnt), "Position collateral token should be WNT");
-        assertEq(position.sizeInUsd, 30000 * 1e18, "Position size should be correct"); // 1 WNT * $3000 * 10x
-        assertEq(position.collateralAmount, 1 * 1e18 - positionFee, "Position collateral should be correct");
+        assertEq(position.sizeInUsd, 30_000 * 1e18, "Position size should be correct"); // 1 WNT * $3000 * 10x
+        assertEq(
+            position.collateralAmount,
+            1 * 1e18 - positionFee,
+            "Position collateral should be correct"
+        );
         assertEq(position.isLong, true, "Position should be long");
 
         // Verify token transfers
@@ -343,7 +321,7 @@ contract OrderTest is Test {
         console.log("Position collateral:", position.collateralAmount);
         console.log("Position open interest:", openInterest);
     }
-    
+
     function testLiquidation() public {
         testExecuteOrder();
 
@@ -353,15 +331,16 @@ contract OrderTest is Test {
 
         setOraclePrices(2700 * 1e18, 1 * 1e18);
 
-        router.liquidatePosition(PositionHandler.LiquidatePositionParams({
-            account: trader,
-            market: address(marketToken),
-            collateralToken: address(wnt)
-        }));
-
-        bytes32 positionKey = keccak256(
-            abi.encodePacked(trader, address(marketToken), address(wnt))
+        router.liquidatePosition(
+            PositionHandler.LiquidatePositionParams({
+                account: trader,
+                market: address(marketToken),
+                collateralToken: address(wnt)
+            })
         );
+
+        bytes32 positionKey =
+            keccak256(abi.encodePacked(trader, address(marketToken), address(wnt)));
 
         PositionHandler.Position memory position = dataStore.getPosition(positionKey);
         assertEq(position.sizeInTokens, 0, "Position size should be 0");
@@ -382,14 +361,7 @@ contract OrderTest is Test {
         bytes32 wntMessageHash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
-                keccak256(
-                    abi.encodePacked(
-                        address(wnt),
-                        wntPrice,
-                        block.timestamp,
-                        block.number
-                    )
-                )
+                keccak256(abi.encodePacked(address(wnt), wntPrice, block.timestamp, block.number))
             )
         );
         (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(SIGNER_PK, wntMessageHash);
@@ -404,20 +376,10 @@ contract OrderTest is Test {
         bytes32 usdcMessageHash = keccak256(
             abi.encodePacked(
                 "\x19Ethereum Signed Message:\n32",
-                keccak256(
-                    abi.encodePacked(
-                        address(usdc),
-                        usdcPrice,
-                        block.timestamp,
-                        block.number
-                    )
-                )
+                keccak256(abi.encodePacked(address(usdc), usdcPrice, block.timestamp, block.number))
             )
         );
-        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(
-            SIGNER_PK,
-            usdcMessageHash
-        );
+        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(SIGNER_PK, usdcMessageHash);
         signedPrices[1] = Oracle.SignedPrice({
             price: usdcPrice,
             timestamp: block.timestamp,

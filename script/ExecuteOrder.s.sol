@@ -26,9 +26,9 @@ contract ExecuteOrderScript is Script {
         tokens[1] = usdc;
 
         Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](2);
-        
-        uint256 wntPrice = 3000 * 10**18;  // $3000 per WNT
-        uint256 usdcPrice = 1 * 10**18;    // $1 per USDC
+
+        uint256 wntPrice = 3000 * 10 ** 18; // $3000 per WNT
+        uint256 usdcPrice = 1 * 10 ** 18; // $1 per USDC
 
         // Get current block and timestamp
         uint256 timestamp = block.timestamp;
@@ -82,17 +82,13 @@ contract ExecuteOrderScript is Script {
 
         // Get position details after execution
         bytes32 positionKey = keccak256(
-            abi.encodePacked(
-                order.account,
-                order.marketToken,
-                order.initialCollateralToken
-            )
+            abi.encodePacked(order.account, order.marketToken, order.initialCollateralToken)
         );
         PositionHandler.Position memory position = DataStore(dataStore).getPosition(positionKey);
-        
+
         console.log("Position size in USD:", position.sizeInUsd);
         console.log("Position collateral:", position.collateralAmount);
 
         vm.stopBroadcast();
     }
-} 
+}
