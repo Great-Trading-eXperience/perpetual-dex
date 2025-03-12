@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./MarketHandler.sol";
 import "./OrderHandler.sol";
 import "./DataStore.sol";
+import "./MarketToken.sol";
+import "./Oracle.sol";
 
 contract PositionHandler {
     address public dataStore;
@@ -99,6 +101,11 @@ contract PositionHandler {
         dataStore = _dataStore;
         oracle = _oracle;
         marketHandler = _marketHandler;
+    }
+
+    // Only for testing
+    function setOracle(address _oracle) external {
+        oracle = _oracle;
     }
 
     function setOrderHandler(address _orderHandler) external {
@@ -220,7 +227,8 @@ contract PositionHandler {
 
         uint256 hoursElapsed = (block.timestamp - position.increasedAtTime) /
             3600;
-        uint256 tokenDecimals = IERC20Metadata(position.collateralToken).decimals();
+        uint256 tokenDecimals = IERC20Metadata(position.collateralToken)
+            .decimals();
         int256 periodFundingFee = (int256(position.sizeInTokens) *
             fundingFee *
             int256(hoursElapsed)) / int256(10 ** tokenDecimals);

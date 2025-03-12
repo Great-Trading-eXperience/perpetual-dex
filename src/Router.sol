@@ -44,6 +44,11 @@ contract Router is Multicall {
         serviceManager = _serviceManager;
     }
 
+    // Only for testing
+    function setServiceManager(address _serviceManager) external {
+        serviceManager = _serviceManager;
+    }
+
     function sendWnt(address _receiver, uint256 _amount) external {
         IERC20(wnt).transferFrom(msg.sender, _receiver, _amount);
     }

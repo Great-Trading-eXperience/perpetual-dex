@@ -16,12 +16,7 @@ import "../src/Oracle.sol";
 import "../src/PositionHandler.sol";
 import "../src/DepositHandler.sol";
 import "../src/DepositVault.sol";
-
-contract MockToken is ERC20 {
-    constructor() ERC20("Mock", "MOCK") {
-        _mint(msg.sender, 1_000_000 * 1e18);
-    }
-}
+import "../src/mocks/MockToken.sol";
 
 contract OrderTest is Test {
     Router public router;
@@ -47,8 +42,8 @@ contract OrderTest is Test {
 
     function setUp() public {
         // Deploy mock tokens first
-        wnt = new MockToken();
-        usdc = new MockToken();
+        wnt = new MockToken("Wrapped Native Token", "WNT", 18);
+        usdc = new MockToken("USD Coin", "USDC", 6);
 
         // Deploy core contracts
         dataStore = new DataStore();
@@ -106,8 +101,8 @@ contract OrderTest is Test {
         );
 
         // Fund deppsitor
-        wnt.transfer(depositor, 10_000 * 1e18);
-        usdc.transfer(depositor, 10_000 * 1e18);
+        wnt.mint(depositor, 10000 * 1e18);
+        usdc.mint(depositor, 2000_000 * 1e6);
         vm.deal(depositor, 100 ether);
 
         // Approve tokens
@@ -117,8 +112,8 @@ contract OrderTest is Test {
         vm.stopPrank();
 
         // Fund keeper
-        wnt.transfer(keeper, 10_000 * 1e18);
-        usdc.transfer(keeper, 10_000 * 1e18);
+        wnt.mint(keeper, 10000 * 1e18);
+        usdc.mint(keeper, 2000_000 * 1e6);
         vm.deal(keeper, 100 ether);
 
         // Approve tokens
@@ -128,8 +123,8 @@ contract OrderTest is Test {
         vm.stopPrank();
 
         // Fund trader
-        wnt.transfer(trader, 20 * 1e18);
-        usdc.transfer(trader, 20 * 1e18);
+        wnt.mint(trader, 20 * 1e18);
+        usdc.mint(trader, 2000 * 1e6);
         vm.deal(trader, 100 ether);
 
         // Approve tokens
@@ -231,8 +226,10 @@ contract OrderTest is Test {
             abi.encodeCall(Router.sendTokens, (address(wnt), address(depositVault), 100 * 1e18));
 
         // 3. Transfer USDC as short token (3,000 USDC)
-        depositData[2] =
-            abi.encodeCall(Router.sendTokens, (address(usdc), address(depositVault), 3000 * 1e18));
+        depositData[2] = abi.encodeCall(
+            Router.sendTokens,
+            (address(usdc), address(depositVault), 3000 * 1e6)
+        );
 
         // 4. Create deposit
         depositData[3] = abi.encodeCall(Router.createDeposit, (params));

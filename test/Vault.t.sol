@@ -131,7 +131,9 @@ contract VaultTest is Test {
             address(withdrawHandler),
             address(0), // order handler
             address(wnt),
-            address(0) // position handler
+            address(0), // position handler
+            address(marketFactory),
+            address(oracle)
         );
 
         // Create market
@@ -155,7 +157,7 @@ contract VaultTest is Test {
 
         // Deploy factory and create vault through it
         vaultFactory = new VaultFactory(
-            address(vaultImplementation), // Now we have a valid implementation
+            address(vaultImplementation),
             address(registry),
             address(dataStore),
             address(router),

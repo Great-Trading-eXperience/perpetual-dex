@@ -15,62 +15,63 @@ contract UpdateOraclePrices is Script {
         signerPrivateKey = vm.envUint("PRIVATE_KEY");
         
         // Oracle contract address should be set in environment
-        oracle = Oracle(vm.envAddress("ORACLE_ADDRESS"));
+        oracle = Oracle(vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS"));
     }
 
     function run() public {
         vm.startBroadcast(deployerPrivateKey);
 
-        // Setup weth token and signer
-        address weth = vm.envAddress("WETH_ADDRESS"); // Replace with actual token address
-        address usdc = vm.envAddress("USDC_ADDRESS"); // Replace with actual token address
-        address signer = vm.addr(signerPrivateKey);
-        
-        // Create signed price update
-        // Set initial prices (3000 USDC per 1 WETH)
-        address[] memory tokens = new address[](2);
-        tokens[0] = weth;
-        tokens[1] = usdc; 
+        // Get token addresses
+        address weth = vm.envAddress("WETH_ADDRESS");
+        address wbtc = vm.envAddress("WBTC_ADDRESS");
+        address usdc = vm.envAddress("USDC_ADDRESS");
+        address pepe = vm.envAddress("PEPE_ADDRESS");
+        address trump = vm.envAddress("TRUMP_ADDRESS");
+        address link = vm.envAddress("LINK_ADDRESS");
+        address doge = vm.envAddress("DOGE_ADDRESS");
 
-        Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](2);
-        
-        uint256 wethPrice = 3000 * 1e18;
-        uint256 usdcPrice = 1 * 1e18;
-
-        uint256 timestamp = block.timestamp;
-        uint256 blockNumber = block.number;
-
-        // Sign and set price for WETH using the correct private key
-        bytes32 wethMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(weth, wethPrice, block.timestamp, block.number))
-            )
+        uint256 wethPrice = 2000 * 1e18 + (uint256(keccak256(abi.encodePacked(block.timestamp))) % (200 * 1e18)) - (100 * 1e18);
+        Oracle(oracle).setPrice(
+            weth,
+            wethPrice
         );
-        (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(deployerPrivateKey, wethMessageHash);
-        signedPrices[0] = Oracle.SignedPrice({
-            price: wethPrice,  // WETH price in USDC
-            timestamp: block.timestamp,
-            blockNumber: block.number,
-            signature: abi.encodePacked(r1, s1, v1)
-        });
 
-        // Sign and set price for USDC using the correct private key
-        bytes32 usdcMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(usdc, usdcPrice, block.timestamp, block.number))
-            )
+        uint256 wbtcPrice = 42000 * 1e18 + (uint256(keccak256(abi.encodePacked(block.timestamp + 1))) % (4200 * 1e18)) - (2100 * 1e18);
+        Oracle(oracle).setPrice(
+            wbtc, 
+            wbtcPrice
         );
-        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(deployerPrivateKey, usdcMessageHash);
-        signedPrices[1] = Oracle.SignedPrice({
-            price: usdcPrice,  // USDC price (1 USD)
-            timestamp: block.timestamp,
-            blockNumber: block.number,
-            signature: abi.encodePacked(r2, s2, v2)
-        });
 
-        oracle.setPrices(tokens, signedPrices);
+        // USDC should stay stable at $1
+        Oracle(oracle).setPrice(
+            usdc,
+            1e18
+        );
+
+        uint256 pepePrice = 1e14 + (uint256(keccak256(abi.encodePacked(block.timestamp + 2))) % 1e13) - (5e12);
+        Oracle(oracle).setPrice(
+            pepe,
+            pepePrice
+        );
+
+        uint256 dogePrice = 10 * 1e16 + (uint256(keccak256(abi.encodePacked(block.timestamp + 3))) % (1e16)) - (5e15);
+        Oracle(oracle).setPrice(
+            doge,
+            dogePrice
+        );
+
+        uint256 trumpPrice = 5 * 1e16 + (uint256(keccak256(abi.encodePacked(block.timestamp + 4))) % (5e15)) - (25e14);
+        Oracle(oracle).setPrice(
+            trump,
+            trumpPrice
+        );
+
+        uint256 linkPrice = 15 * 1e18 + (uint256(keccak256(abi.encodePacked(block.timestamp + 5))) % (15e17)) - (75e16);
+        Oracle(oracle).setPrice(
+            link,
+            linkPrice
+        );
+
         vm.stopBroadcast();
     }
 }

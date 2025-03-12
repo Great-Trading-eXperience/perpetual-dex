@@ -44,6 +44,7 @@ contract AssetVault {
     
     // Markets data
     MarketAllocation[] public markets;
+    mapping(address => MarketInfo) public marketInfos;
     mapping(address => uint256) public marketIndexes; // marketAddress => index + 1 (0 means not found)
     
     // Router and handler addresses
@@ -65,6 +66,11 @@ contract AssetVault {
     event Allocated(address indexed market, uint256 amount);
     event Deallocated(address indexed market, uint256 amount);
     event Rebalanced();
+
+    struct MarketInfo {
+        uint256 weight;
+        bool isActive;
+    }
 
     constructor(
         address _router,
@@ -113,6 +119,10 @@ contract AssetVault {
         IERC20(_asset).approve(router, type(uint256).max);
         
         initialized = true;
+    }
+
+    function getMarketInfo(address _market) external view returns (MarketInfo memory) {
+        return marketInfos[_market];
     }
 
     function deposit(uint256 _amount) external onlyInitialized returns (uint256 shares) {
@@ -198,7 +208,11 @@ contract AssetVault {
         }));
         
         marketIndexes[_market] = markets.length;
-        
+        marketInfos[_market] = MarketInfo({
+            weight: _allocationPercentage,
+            isActive: true
+        });
+
         // Calculate allocation amount
         uint256 balance = IERC20(asset).balanceOf(address(this));
         uint256 allocationAmount = (balance * _allocationPercentage) / 10000;
@@ -232,6 +246,11 @@ contract AssetVault {
         
         markets[index].allocationPercentage = _allocationPercentage;
         markets[index].isActive = _isActive;
+
+        marketInfos[_market] = MarketInfo({
+            weight: _allocationPercentage,
+            isActive: _isActive
+        });
         
         emit MarketUpdated(_market, _allocationPercentage, _isActive);
         

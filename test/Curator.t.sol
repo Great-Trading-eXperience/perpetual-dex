@@ -37,19 +37,35 @@ contract MockLongVault is AssetVault {
         address _withdrawVault,
         address _marketFactory,
         address _wnt
-    ) AssetVault(_router, _dataStore, _depositHandler, _depositVault, _withdrawVault, _marketFactory, _wnt) {}
+    ) AssetVault(
+        _router,
+        _dataStore,
+        _depositHandler,
+        _depositVault,
+        _withdrawVault,
+        _marketFactory,
+        _wnt
+    ) {}
 }
 
 contract MockShortVault is AssetVault {
     constructor(
         address _router,
+        address _dataStore,
         address _depositHandler,
         address _depositVault,
         address _withdrawVault,
         address _marketFactory,
-        address _wnt,
-        address _dataStore
-    ) AssetVault(_router, _dataStore, _depositHandler, _depositVault, _withdrawVault, _marketFactory, _wnt) {}
+        address _wnt
+    ) AssetVault(
+        _router,
+        _dataStore,
+        _depositHandler,
+        _depositVault,
+        _withdrawVault,
+        _marketFactory,
+        _wnt
+    ) {}
 }
 
 contract CuratorTest is Test {
@@ -60,7 +76,9 @@ contract CuratorTest is Test {
     MockToken public weth;
     MockToken public usdc;
     Router public router;
+    PositionHandler public positionHandler;
     DepositHandler public depositHandler;
+    WithdrawHandler public withdrawHandler;
     DepositVault public depositVault;
     WithdrawVault public withdrawVault;
     OrderHandler public orderHandler;
@@ -74,10 +92,17 @@ contract CuratorTest is Test {
     address public curator2 = address(3);
     address public user = address(4);
 
+    // Add market addresses as state variables
+    address public wethUsdcMarket;
+    address public btcUsdcMarket;
+    address public linkUsdcMarket;
+
     function setUp() public {
-        // Deploy mock tokens
+        // Deploy mock tokens for markets
         weth = new MockToken("Wrapped ETH", "WETH", 18);
         usdc = new MockToken("USD Coin", "USDC", 6);
+        MockToken btc = new MockToken("Bitcoin", "BTC", 8);
+        MockToken link = new MockToken("Chainlink", "LINK", 18);
 
         vm.startPrank(owner);  // Start owner context here
 
@@ -111,12 +136,14 @@ contract CuratorTest is Test {
 
         // Now deploy router with all addresses
         router = new Router(
-            address(weth),
+            address(dataStore),
             address(depositHandler),
-            address(depositVault),
+            address(withdrawHandler),
             address(orderHandler),
-            address(orderVault),
-            address(dataStore)
+            address(weth),
+            address(positionHandler),
+            address(marketFactory),
+            address(oracle)
         );
 
         // Update handlers with router address
@@ -148,12 +175,12 @@ contract CuratorTest is Test {
         // Create mock vault implementations
         MockLongVault vaultImpl = new MockLongVault(
             address(router),
+            address(dataStore),
             address(depositHandler),
             address(depositVault),
             address(withdrawVault),
             address(marketFactory),
-            address(weth),
-            address(dataStore)
+            address(weth)
         );
         vaultFactory = new VaultFactory(
             address(vaultImpl),
@@ -169,6 +196,27 @@ contract CuratorTest is Test {
         registry.addCurator(curator1, "Curator One", "ipfs://curator1");
         registry.addCurator(curator2, "Curator Two", "ipfs://curator2");
         vm.stopPrank();  // End owner context
+
+        // Deploy and register markets
+        // WETH-USDC market
+        wethUsdcMarket = marketFactory.createMarket(
+            address(weth),  // indexToken
+            address(usdc)   // shortToken
+        );
+
+        // BTC-USDC market
+        btcUsdcMarket = marketFactory.createMarket(
+            address(btc),   // indexToken
+            address(usdc)   // shortToken
+        );
+
+        // LINK-USDC market
+        linkUsdcMarket = marketFactory.createMarket(
+            address(link),  // indexToken
+            address(usdc)   // shortToken
+        );
+
+        vm.stopPrank();
 
         // Fund accounts
         deal(address(weth), user, 100 ether);
@@ -283,6 +331,136 @@ contract CuratorTest is Test {
         assertEq(assetVault.shareBalances(user), shares - withdrawShares);
         assertEq(withdrawnAssets, depositAmount / 2);
         
+        vm.stopPrank();
+    }
+
+    function testAddMarketToVault() public {
+        // Setup vault
+        vm.startPrank(curator1);
+        address curatorContract = factory.deployCuratorContract(
+            "Test Curator",
+            "ipfs://test",
+            500
+        );
+        address vault = vaultFactory.createVault(
+            curatorContract,
+            address(weth),
+            "WETH Vault",
+            "vWETH",
+            address(marketFactory),
+            address(weth)
+        );
+
+        // Test adding market to vault using deployed market
+        Curator(curatorContract).addMarketToVault(
+            vault,
+            wethUsdcMarket,
+            5000 // 50% weight
+        );
+
+        // Verify market was added through AssetVault
+        AssetVault.MarketInfo memory marketInfo = AssetVault(vault).getMarketInfo(wethUsdcMarket);
+        assertEq(marketInfo.weight, 5000);
+        assertTrue(marketInfo.isActive);
+
+        vm.stopPrank();
+    }
+
+    function testUpdateMarketInVault() public {
+        // Setup vault and add market
+        vm.startPrank(curator1);
+        address curatorContract = factory.deployCuratorContract(
+            "Test Curator",
+            "ipfs://test",
+            500
+        );
+        address vault = vaultFactory.createVault(
+            curatorContract,
+            address(weth),
+            "WETH Vault",
+            "vWETH",
+            address(marketFactory),
+            address(weth)
+        );
+        Curator(curatorContract).addVault(vault);
+        
+        // First add the market using deployed market
+        Curator(curatorContract).addMarketToVault(
+            vault,
+            wethUsdcMarket,
+            5000
+        );
+
+        // Test updating market
+        Curator(curatorContract).updateMarketInVault(
+            vault,
+            wethUsdcMarket,
+            3000, // 30% weight
+            false // deactivate market
+        );
+
+        // Verify market was updated
+        AssetVault.MarketInfo memory marketInfo = AssetVault(vault).getMarketInfo(wethUsdcMarket);
+        assertEq(marketInfo.weight, 3000);
+        assertFalse(marketInfo.isActive);
+
+        vm.stopPrank();
+    }
+
+    function testAddMarketToVaultFailures() public {
+        // Setup vault
+        vm.startPrank(curator1);
+        address curatorContract = factory.deployCuratorContract(
+            "Test Curator",
+            "ipfs://test",
+            500
+        );
+        address vault = vaultFactory.createVault(
+            curatorContract,
+            address(weth),
+            "WETH Vault",
+            "vWETH",
+            address(marketFactory),
+            address(weth)
+        );
+        
+        address testMarket = address(0x123);
+
+        // Test non-owner cannot add market
+        vm.stopPrank();
+        vm.startPrank(user);
+        vm.expectRevert(
+            abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", user)
+        );
+        Curator(curatorContract).addMarketToVault(
+            vault,
+            testMarket,
+            5000
+        );
+
+        // Test invalid parameters
+        vm.startPrank(curator1);
+        vm.expectRevert("Invalid vault address");
+        Curator(curatorContract).addMarketToVault(
+            address(0),
+            testMarket,
+            5000
+        );
+
+        vm.expectRevert("Invalid market address");
+        Curator(curatorContract).addMarketToVault(
+            vault,
+            address(0),
+            5000
+        );
+
+        vm.expectRevert("Weight must be between 0 and 10000");
+        Curator(curatorContract).addMarketToVault(
+            vault,
+            testMarket,
+            15000
+        );
+
         vm.stopPrank();
     }
 }

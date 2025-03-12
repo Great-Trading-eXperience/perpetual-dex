@@ -111,6 +111,18 @@ contract Oracle is Ownable, ReentrancyGuard {
         }
     }
 
+    function setPrice(address _tokenAddress, uint256 _price) external {
+        prices[_tokenAddress] = Price({
+            value: _price,
+            timestamp: block.timestamp,
+            blockNumber: block.number,
+            minBlockInterval: minBlockInterval,
+            maxBlockInterval: maxBlockInterval
+        });
+
+        emit PriceUpdate(_tokenAddress, _price, block.timestamp, block.number);
+    }
+
     // Validation functions
     function validateBlockInterval(uint256 blockNumber, uint256 previousBlockNumber) internal view {
         if (blockNumber <= previousBlockNumber) revert BlockIntervalInvalid(0, blockNumber, previousBlockNumber);
