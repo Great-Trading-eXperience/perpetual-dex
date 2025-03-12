@@ -1,10 +1,14 @@
 # Scripts
 
-## 1. Deployment
+## 1. Deploy Tokens
 
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+forge script script/DeployTokens.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-# 2. Set Oracle
+## 1. Deploy Core
+
+forge script script/DeployCore.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+# 2. Add Tokens to Oracle
 
 forge script script/AddTokensToOracle.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
@@ -43,6 +47,26 @@ forge script script/CancelOrder.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_
 ## 10. Cancel Deposit
 
 forge script script/CancelDeposit.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 11. Create Withdraw
+
+forge script script/CreateWithdraw.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 12. Execute Withdraw
+
+forge script script/ExecuteWithdraw.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 13. Cancel Withdraw
+
+forge script script/CancelWithdraw.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 14. Deploy Curator
+
+forge script script/DeployCurator.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+
+## 15. Deposit to Curator Vaults
+
+forge script script/DepositToCuratorVaults.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 # Deployments
 

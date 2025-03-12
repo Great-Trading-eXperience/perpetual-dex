@@ -30,8 +30,8 @@ contract LiquidatePositionScript is Script {
 
         Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](2);
         
-        uint256 wntPrice = 2700 * 10**18;  // $2700 per WNT
-        uint256 usdcPrice = 1 * 10**18;    // $1 per USDC
+        uint256 wntPrice = 2700 * 1e18;  // $2700 per WNT
+        uint256 usdcPrice = 1 * 1e18;    // $1 per USDC
 
         // Get current block and timestamp
         uint256 timestamp = block.timestamp;

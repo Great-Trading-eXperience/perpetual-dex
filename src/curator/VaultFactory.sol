@@ -124,6 +124,9 @@ contract VaultFactory is Ownable {
             wnt
         );
         vault.initialize(curator, asset, name, symbol);
+
+        emit VaultDeployed(curator, address(vault), asset, name);
+
         return address(vault);
     }
 }

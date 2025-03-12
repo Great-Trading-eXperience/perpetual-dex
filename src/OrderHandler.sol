@@ -47,7 +47,7 @@ contract OrderHandler {
         uint256 initialCollateralDeltaAmount,
         uint256 executionFee
     );
-    error InsufficientTokenAmount();
+    error InsufficientTokenAmount(bool isLong, uint256 availableSizeInTokens, uint256 sizeInTokens);
     error OnlySelf();
     error CollateralTokenPriceIsZero();
     error TriggerPriceIsGreaterThanCollateralTokenPrice();
@@ -166,6 +166,8 @@ contract OrderHandler {
                 }
                 initialCollateralDeltaAmount -= _params.executionFee;
                 shouldRecordSeparateExecutionFeeTransfer = false;
+            } else {
+                shouldRecordSeparateExecutionFeeTransfer = true;
             }
         } else if (
             _params.orderType == OrderType.MarketDecrease ||
@@ -301,11 +303,20 @@ contract OrderHandler {
                 revert PriceIsGreaterThanAcceptablePrice();
             }
 
-            uint256 availableSizeInTokens = marketState.longTokenAmount -
-                marketState.longTokenOpenInterest;
+            if(order.isLong) {
+                uint256 availableSizeInTokens = marketState.longTokenAmount -
+                    marketState.longTokenOpenInterest;
 
-            if (sizeInTokens > availableSizeInTokens) {
-                revert InsufficientTokenAmount();
+                if (sizeInTokens > availableSizeInTokens) {
+                    revert InsufficientTokenAmount(order.isLong, availableSizeInTokens, sizeInTokens);
+                }
+            } else {
+                uint256 availableSizeInTokens = marketState.shortTokenAmount -
+                    marketState.shortTokenOpenInterest;
+
+                if (sizeInTokens > availableSizeInTokens) {
+                    revert InsufficientTokenAmount(order.isLong, availableSizeInTokens, sizeInTokens);
+                }
             }
         } else if (
             order.orderType == OrderType.MarketDecrease ||

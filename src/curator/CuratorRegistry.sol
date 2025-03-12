@@ -23,7 +23,7 @@ contract CuratorRegistry is Ownable {
     address[] public curatorAddresses;
     
     // Events
-    event CuratorAdded(address indexed curatorAddress, string name);
+    event CuratorAdded(address indexed curatorAddress, string name, string uri);
     event CuratorDeactivated(address indexed curatorAddress);
     event CuratorReactivated(address indexed curatorAddress);
     
@@ -31,7 +31,8 @@ contract CuratorRegistry is Ownable {
     
     function addCurator(address _curatorAddress, string calldata _name, string calldata _uri) external onlyOwner {
         require(_curatorAddress != address(0), "Invalid address");
-        require(curators[_curatorAddress].curatorAddress == address(0), "Curator already exists");
+        // TODO
+        // require(curators[_curatorAddress].curatorAddress == address(0), "Curator already exists");
         
         CuratorInfo memory newCurator = CuratorInfo({
             name: _name,
@@ -44,7 +45,7 @@ contract CuratorRegistry is Ownable {
         curators[_curatorAddress] = newCurator;
         curatorAddresses.push(_curatorAddress);
         
-        emit CuratorAdded(_curatorAddress, _name);
+        emit CuratorAdded(_curatorAddress, _name, _uri);
     }
     
     function deactivateCurator(address _curatorAddress) external onlyOwner {
