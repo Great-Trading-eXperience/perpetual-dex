@@ -21,6 +21,25 @@ The GTX Perp Dex is a revolutionary decentralized exchange for perpetual futures
 - **Innovative price oracle**: Mark prices are secured through AVS (Actively Validated Service) and zkTLS technology, ensuring reliable and manipulation-resistant price feeds while maintaining decentralization
 - **Curator Vaults**: Curator Vaults are a new way to manage and grow your crypto portfolio. They are a collection of vaults that are managed by a curator. The curator is a trusted entity that is responsible for managing the vaults and maintaining risk parameters to ensure the safety of user funds through careful monitoring and adjustment.
 
+# Architecture
+
+![Architecture Diagram](./architecture.svg)
+
+The GTX Perp Dex architecture consists of several key layers:
+
+1. **Core Protocol Layer**: Contains the fundamental smart contracts that power the protocol including Router, Market Factory, Curator Factory, Curator Vault Factory, Order Vault and Data Store.
+
+2. **Handler Layer**: Specialized contracts that handle different protocol operations like Order Handler, Position Handler, Deposit Handler, Withdraw Handler and Market Handler.
+
+3. **Trading Infrastructure**: Enables permissionless markets and perpetual futures trading functionality.
+
+4. **Oracle Infrastructure**: Leverages AVS Price Oracle and zkTLS technology for secure and decentralized price feeds.
+
+5. **Curator System**: Manages Curator Vaults and risk parameters for protocol safety.
+
+6. **Keeper Network**: Permissionless network of keepers incentivized through execution fees to process protocol operations.
+
+
 # Scripts
 
 ## 1. Deploy Tokens
