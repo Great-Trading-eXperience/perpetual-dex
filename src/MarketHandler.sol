@@ -36,6 +36,11 @@ contract MarketHandler {
         oracle = _oracle;
     }
 
+    // Only for testing
+    function setOracle(address _oracle) external {
+        oracle = _oracle;
+    }
+
     function setPositionHandler(address _positionHandler) external {
         if(positionHandler != address(0)) {
             revert PositionHandlerAlreadySet();
@@ -111,7 +116,7 @@ contract MarketHandler {
         // Calculate USD value of pool's tokens
         uint256 longTokenUsd = (state.longTokenAmount * longTokenPrice) / (10 ** longTokenDecimals);
         uint256 shortTokenUsd = (state.shortTokenAmount * shortTokenPrice) / (10 ** shortTokenDecimals);
-        
+
         return longTokenUsd + shortTokenUsd;
     }
 

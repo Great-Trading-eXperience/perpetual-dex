@@ -131,7 +131,9 @@ contract VaultTest is Test {
             address(withdrawHandler),
             address(0), // order handler
             address(wnt),
-            address(0) // position handler
+            address(0), // position handler
+            address(marketFactory),
+            address(oracle)
         );
 
         // Create market

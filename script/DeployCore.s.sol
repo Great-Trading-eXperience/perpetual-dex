@@ -22,11 +22,8 @@ contract DeployCoreScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address wnt = vm.envAddress("WETH_ADDRESS");
-        address oracle = vm.envAddress("GTXORACLE_SERVICE_MANAGER_ADDRESS");
         uint256 minBlockInterval = vm.envUint("MIN_BLOCK_INTERVAL");
         uint256 maxBlockInterval = vm.envUint("MAX_BLOCK_INTERVAL");
-        // address dataStore = vm.envAddress("DATA_STORE_ADDRESS");
-        // address marketFactory = vm.envAddress("MARKET_FACTORY_ADDRESS");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -40,9 +37,11 @@ contract DeployCoreScript is Script {
         // Oracle oracle = new Oracle(minBlockInterval, maxBlockInterval);
 
         // Oracle AVS with service manager
-        IGTXOracleServiceManager(oracle).initialize(
+        address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
+        IGTXOracleServiceManager(oracleServiceManager).initialize(
             address(marketFactory), minBlockInterval, maxBlockInterval
         );
+        address oracle = oracleServiceManager;
 
         // Deploy market handler
         MarketHandler marketHandler = new MarketHandler(address(dataStore), address(oracle));
@@ -119,7 +118,6 @@ contract DeployCoreScript is Script {
             address(withdrawVault)
         );
 
-        console.log("ORACLE_ADDRESS=%s", address(oracle));
         console.log("DATA_STORE_ADDRESS=%s", address(dataStore));
         console.log("MARKET_FACTORY_ADDRESS=%s", address(marketFactory));
         console.log("ORACLE_ADDRESS=%s", address(oracle));

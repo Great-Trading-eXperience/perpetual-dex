@@ -76,7 +76,9 @@ contract CuratorTest is Test {
     MockToken public weth;
     MockToken public usdc;
     Router public router;
+    PositionHandler public positionHandler;
     DepositHandler public depositHandler;
+    WithdrawHandler public withdrawHandler;
     DepositVault public depositVault;
     WithdrawVault public withdrawVault;
     OrderHandler public orderHandler;
@@ -134,12 +136,14 @@ contract CuratorTest is Test {
 
         // Now deploy router with all addresses
         router = new Router(
-            address(weth),
+            address(dataStore),
             address(depositHandler),
-            address(depositVault),
+            address(withdrawHandler),
             address(orderHandler),
-            address(orderVault),
-            address(dataStore)
+            address(weth),
+            address(positionHandler),
+            address(marketFactory),
+            address(oracle)
         );
 
         // Update handlers with router address

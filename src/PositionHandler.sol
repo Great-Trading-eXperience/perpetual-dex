@@ -103,6 +103,11 @@ contract PositionHandler {
         marketHandler = _marketHandler;
     }
 
+    // Only for testing
+    function setOracle(address _oracle) external {
+        oracle = _oracle;
+    }
+
     function setOrderHandler(address _orderHandler) external {
         if (orderHandler != address(0)) {
             revert OrderHandlerAlreadySet();
@@ -222,7 +227,8 @@ contract PositionHandler {
 
         uint256 hoursElapsed = (block.timestamp - position.increasedAtTime) /
             3600;
-        uint256 tokenDecimals = IERC20Metadata(position.collateralToken).decimals();
+        uint256 tokenDecimals = IERC20Metadata(position.collateralToken)
+            .decimals();
         int256 periodFundingFee = (int256(position.sizeInTokens) *
             fundingFee *
             int256(hoursElapsed)) / int256(10 ** tokenDecimals);

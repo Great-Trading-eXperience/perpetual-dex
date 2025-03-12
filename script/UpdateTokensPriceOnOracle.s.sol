@@ -15,7 +15,7 @@ contract UpdateOraclePrices is Script {
         signerPrivateKey = vm.envUint("PRIVATE_KEY");
         
         // Oracle contract address should be set in environment
-        oracle = Oracle(vm.envAddress("ORACLE_ADDRESS"));
+        oracle = Oracle(vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS"));
     }
 
     function run() public {

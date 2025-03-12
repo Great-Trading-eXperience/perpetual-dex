@@ -13,7 +13,9 @@ contract ExecuteOrderScript is Script {
         uint256 keeperPrivateKey = vm.envUint("PRIVATE_KEY");
         address dataStore = vm.envAddress("DATA_STORE_ADDRESS");
         address orderHandler = vm.envAddress("ORDER_HANDLER_ADDRESS");
-        address oracle = vm.envAddress("ORACLE_ADDRESS");
+        // address oracle = vm.envAddress("ORACLE_ADDRESS");
+        address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
+        address oracle = oracleServiceManager;
         address wnt = vm.envAddress("WETH_ADDRESS");
         address usdc = vm.envAddress("USDC_ADDRESS");
 
@@ -35,37 +37,9 @@ contract ExecuteOrderScript is Script {
         uint256 blockNumber = block.number;
 
         // Sign WNT price
-        bytes32 wntMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(wnt, wntPrice, timestamp, blockNumber))
-            )
-        );
-        (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(keeperPrivateKey, wntMessageHash);
-        signedPrices[0] = Oracle.SignedPrice({
-            price: wntPrice,
-            timestamp: timestamp,
-            blockNumber: blockNumber,
-            signature: abi.encodePacked(r1, s1, v1)
-        });
-
-        // Sign USDC price
-        bytes32 usdcMessageHash = keccak256(
-            abi.encodePacked(
-                "\x19Ethereum Signed Message:\n32",
-                keccak256(abi.encodePacked(usdc, usdcPrice, timestamp, blockNumber))
-            )
-        );
-        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(keeperPrivateKey, usdcMessageHash);
-        signedPrices[1] = Oracle.SignedPrice({
-            price: usdcPrice,
-            timestamp: timestamp,
-            blockNumber: blockNumber,
-            signature: abi.encodePacked(r2, s2, v2)
-        });
-
         // Set prices in oracle
-        Oracle(oracle).setPrices(tokens, signedPrices);
+        Oracle(oracle).setPrice(tokens[0], wntPrice);
+        Oracle(oracle).setPrice(tokens[1], usdcPrice);
 
         // Get total number of orders
         uint256 orderCount = DataStore(dataStore).getNonce(DataStore.TransactionType.Order);

@@ -120,6 +120,11 @@ contract OrderHandler {
         marketHandler = _marketHandler;
     }
 
+    // Only for testing
+    function setOracle(address _oracle) external {
+        oracle = _oracle;
+    }
+
     function createOrder(
         address _dataStore,
         address _account,
