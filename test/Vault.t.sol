@@ -155,7 +155,7 @@ contract VaultTest is Test {
 
         // Deploy factory and create vault through it
         vaultFactory = new VaultFactory(
-            address(vaultImplementation), // Now we have a valid implementation
+            address(vaultImplementation),
             address(registry),
             address(dataStore),
             address(router),

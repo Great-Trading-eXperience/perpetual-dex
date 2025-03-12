@@ -26,9 +26,9 @@ contract ExecuteOrderScript is Script {
         tokens[1] = usdc;
 
         Oracle.SignedPrice[] memory signedPrices = new Oracle.SignedPrice[](2);
-
-        uint256 wntPrice = 3000 * 10 ** 18; // $3000 per WNT
-        uint256 usdcPrice = 1 * 10 ** 18; // $1 per USDC
+        
+        uint256 wntPrice = 3000 * 1e18;  // $3000 per WNT
+        uint256 usdcPrice = 1 * 1e18;    // $1 per USDC
 
         // Get current block and timestamp
         uint256 timestamp = block.timestamp;
@@ -67,27 +67,44 @@ contract ExecuteOrderScript is Script {
         // Set prices in oracle
         Oracle(oracle).setPrices(tokens, signedPrices);
 
-        // Get order details before execution
-        OrderHandler.Order memory order = DataStore(dataStore).getOrder(0);
-        console.log("Order account:", order.account);
-        console.log("Order size delta USD:", order.sizeDeltaUsd);
-        console.log("Order collateral amount:", order.initialCollateralDeltaAmount);
+        // Get total number of orders
+        uint256 orderCount = DataStore(dataStore).getNonce(DataStore.TransactionType.Order);
+        
+        console.log("Total orders to execute:", orderCount);
 
-        // Execute the order
-        OrderHandler(orderHandler).executeOrder(0);
+        // Execute all orders
+        for(uint256 i = 0; i < orderCount; i++) {
+            // Get order details before execution
+            OrderHandler.Order memory order = DataStore(dataStore).getOrder(i);
+            
+            console.log("\nExecuting order with key:", i);
+            console.log("Order account:", order.account);
+            console.log("Order size delta USD:", order.sizeDeltaUsd);
+            console.log("Order collateral amount:", order.initialCollateralDeltaAmount);
 
-        // Get keeper's execution fee
-        uint256 keeperBalance = IERC20(wnt).balanceOf(vm.addr(keeperPrivateKey));
-        console.log("Keeper received execution fee:", keeperBalance);
+            try OrderHandler(orderHandler).executeOrder(i) {
+                console.log("Order executed successfully");
 
-        // Get position details after execution
-        bytes32 positionKey = keccak256(
-            abi.encodePacked(order.account, order.marketToken, order.initialCollateralToken)
-        );
-        PositionHandler.Position memory position = DataStore(dataStore).getPosition(positionKey);
+                // Get keeper's execution fee
+                uint256 keeperBalance = IERC20(wnt).balanceOf(vm.addr(keeperPrivateKey));
+                console.log("Keeper received execution fee:", keeperBalance);
 
-        console.log("Position size in USD:", position.sizeInUsd);
-        console.log("Position collateral:", position.collateralAmount);
+                // Get position details after execution
+                bytes32 positionKey = keccak256(
+                    abi.encodePacked(
+                        order.account,
+                        order.marketToken,
+                        order.initialCollateralToken
+                    )
+                );
+                PositionHandler.Position memory position = DataStore(dataStore).getPosition(positionKey);
+                
+                console.log("Position size in USD:", position.sizeInUsd);
+                console.log("Position collateral:", position.collateralAmount);
+            } catch {
+                console.log("Failed to execute order", i);
+            }
+        }
 
         vm.stopBroadcast();
     }

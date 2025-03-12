@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "./MarketHandler.sol";
 import "./OrderHandler.sol";
 import "./DataStore.sol";
+import "./MarketToken.sol";
+import "./Oracle.sol";
 
 contract PositionHandler {
     address public dataStore;

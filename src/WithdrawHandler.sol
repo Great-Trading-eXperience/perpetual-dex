@@ -5,6 +5,7 @@ import "./WithdrawVault.sol";
 import "./DataStore.sol";
 import "./MarketFactory.sol";
 import "./MarketHandler.sol";
+import "./MarketToken.sol";
 
 contract WithdrawHandler {
     address public dataStore;

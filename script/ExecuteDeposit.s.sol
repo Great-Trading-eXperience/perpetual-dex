@@ -11,31 +11,45 @@ contract ExecuteDepositScript is Script {
         uint256 keeperPrivateKey = vm.envUint("PRIVATE_KEY");
         address depositHandler = vm.envAddress("DEPOSIT_HANDLER_ADDRESS");
         address dataStore = vm.envAddress("DATA_STORE_ADDRESS");
-        uint256 depositKey = vm.envUint("DEPOSIT_KEY");
 
         // Start broadcasting keeper's transactions
         vm.startBroadcast(keeperPrivateKey);
 
-        // Get deposit info for logging
-        DepositHandler.Deposit memory deposit = DataStore(dataStore).getDeposit(depositKey);
-        
-        // Log deposit details before execution
-        console.log("Executing deposit with key:", depositKey);
-        console.log("Deposit account:", deposit.account);
-        console.log("Long token amount:", deposit.initialLongTokenAmount);
-        console.log("Short token amount:", deposit.initialShortTokenAmount);
-        console.log("Execution fee:", deposit.executionFee);
+        // Get total number of deposits
+        uint256 depositCount = DataStore(dataStore).getNonce(DataStore.TransactionType.Deposit);
+        console.log("Total deposits to execute: %s", depositCount);
 
-        // Execute the deposit
-        DepositHandler(depositHandler).executeDeposit(depositKey);
+        // Execute each valid deposit
+        for (uint256 i = 0; i < depositCount; i++) {
+            DepositHandler.Deposit memory deposit = DataStore(dataStore).getDeposit(i);
+            
+            // Skip empty/invalid deposits
+            if (deposit.account == address(0) || deposit.marketToken == address(0)) {
+                console.log("Skipping invalid deposit %s", i);
+                continue;
+            }
 
-        console.log("Deposit executed successfully");
-        console.log("Keeper received execution fee:", deposit.executionFee);
+            console.log("\nExecuting deposit with key: %s", i);
+            console.log("Deposit account:", deposit.account);
+            console.log("Long token amount:", deposit.initialLongTokenAmount);
+            console.log("Short token amount:", deposit.initialShortTokenAmount);
+            console.log("Execution fee:", deposit.executionFee);
 
-        uint256 balanceOfMarketToken = IERC20(deposit.marketToken).balanceOf(deposit.receiver);
+            try DepositHandler(depositHandler).executeDeposit(i) {
+                console.log("Deposit executed successfully");
+                
+                // Log execution fee received
+                uint256 keeperBalance = address(msg.sender).balance;
+                console.log("Keeper received execution fee: %s", keeperBalance);
 
-        console.log("Balance of market token: %s", balanceOfMarketToken);
+                // Log market token balance
+                uint256 balanceOfMarketToken = IERC20(deposit.marketToken).balanceOf(deposit.receiver);
+                console.log("Balance of market token: %s", balanceOfMarketToken);
+            } catch {
+                console.log("Failed to execute deposit %s", i);
+            }
+        }
 
         vm.stopBroadcast();
     }
-} 
+}
