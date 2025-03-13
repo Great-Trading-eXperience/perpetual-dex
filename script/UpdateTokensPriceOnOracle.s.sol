@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
 import "../src/Oracle.sol";
+import "../interfaces/IGTXOracleServiceManager.sol";
 
 contract UpdateOraclePrices is Script {
     Oracle public oracle;
@@ -15,7 +16,13 @@ contract UpdateOraclePrices is Script {
         signerPrivateKey = vm.envUint("PRIVATE_KEY");
         
         // Oracle contract address should be set in environment
-        oracle = Oracle(vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS"));
+
+        // 1. Used for internal oracle
+        // oracle = Oracle(vm.envAddress("ORACLE_ADDRESS"));
+
+        // 2. Used for external oracle
+        address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
+        oracle = IGTXOracleServiceManager(oracleServiceManager).oracle();
     }
 
     function run() public {

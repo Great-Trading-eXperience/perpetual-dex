@@ -13,9 +13,9 @@ contract ExecuteOrderScript is Script {
         uint256 keeperPrivateKey = vm.envUint("PRIVATE_KEY");
         address dataStore = vm.envAddress("DATA_STORE_ADDRESS");
         address orderHandler = vm.envAddress("ORDER_HANDLER_ADDRESS");
-        // address oracle = vm.envAddress("ORACLE_ADDRESS");
-        address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
-        address oracle = oracleServiceManager;
+        address oracle = vm.envAddress("ORACLE_ADDRESS");
+        // address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
+        // address oracle = oracleServiceManager;
         address wnt = vm.envAddress("WETH_ADDRESS");
         address usdc = vm.envAddress("USDC_ADDRESS");
 
