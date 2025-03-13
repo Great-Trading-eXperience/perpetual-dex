@@ -34,9 +34,10 @@ contract DeployCoreScript is Script {
         MarketFactory marketFactory = new MarketFactory(address(dataStore));
 
         // Deploy oracle
+        // 1. Used for internal oracle
         // Oracle oracle = new Oracle(minBlockInterval, maxBlockInterval);
 
-        // Oracle AVS with service manager
+        // 2. Used for external oracle
         address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
         IGTXOracleServiceManager(oracleServiceManager).initialize(
             address(marketFactory), minBlockInterval, maxBlockInterval

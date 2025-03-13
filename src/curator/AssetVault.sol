@@ -90,6 +90,7 @@ contract AssetVault {
         wnt = _wnt;
         // Approve router to spend WNT for execution fees
         IERC20(_wnt).approve(_router, type(uint256).max);
+        IERC20(_wnt).approve(_depositHandler, type(uint256).max);
     }
 
     modifier onlyInitialized() {
@@ -117,7 +118,7 @@ contract AssetVault {
         decimals = ERC20(_asset).decimals();
         
         IERC20(_asset).approve(router, type(uint256).max);
-        
+        IERC20(_asset).approve(depositHandler, type(uint256).max);
         initialized = true;
     }
 
@@ -218,7 +219,7 @@ contract AssetVault {
         uint256 allocationAmount = (balance * _allocationPercentage) / 10000;
         
         // Approve market token spending for both deposit and withdrawal
-        IERC20(asset).approve(_market, allocationAmount);
+        IERC20(asset).approve(_market, type(uint256).max);
         IERC20(_market).approve(router, type(uint256).max);
         
         // Allocate funds if we have balance
@@ -303,8 +304,6 @@ contract AssetVault {
 
         bytes32 marketKey = IDataStore(dataStore).getMarketKey(_market);
         IMarketFactory.Market memory market = IDataStore(dataStore).getMarket(marketKey);
-        
-        IERC20(asset).approve(_market, _amount);
         
         bytes[] memory depositData = new bytes[](3);
         
