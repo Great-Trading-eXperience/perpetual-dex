@@ -92,6 +92,10 @@ GTX Perpetual consists of multiple components that enable a permissionless perpe
    Indexing service that processes and structures blockchain data for efficient market analytics and historical data queries.  
    🔗 **Repo:** [Perpetual Indexer](https://github.com/Great-Trading-eXperience/perpetual-indexer)
 
+4. **Frontend**  
+   The user interface for the GTX Perpetual platform, providing seamless access to trading features and market data.  
+   🔗 **Repo:** [Frontend](https://github.com/Great-Trading-eXperience/gtx-frontend)
+
 ---
 
 ## **Deployed Contracts**
