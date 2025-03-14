@@ -11,29 +11,29 @@ contract ExecuteDepositScript is Script {
         uint256 keeperPrivateKey = vm.envUint("PRIVATE_KEY");
         address depositHandler = vm.envAddress("DEPOSIT_HANDLER_ADDRESS");
         address dataStore = vm.envAddress("DATA_STORE_ADDRESS");
-        uint256 depositKey = vm.envUint("DEPOSIT_KEY");
+        // uint256 depositKey = vm.envUint("DEPOSIT_KEY");
 
         // Start broadcasting keeper's transactions
         vm.startBroadcast(keeperPrivateKey);
 
         // Get deposit info for logging
-        DepositHandler.Deposit memory deposit = DataStore(dataStore).getDeposit(depositKey);
-        
-        // Log deposit details before execution
-        console.log("Executing deposit with key:", depositKey);
-        console.log("Deposit account:", deposit.account);
-        console.log("Long token amount:", deposit.initialLongTokenAmount);
-        console.log("Short token amount:", deposit.initialShortTokenAmount);
-        console.log("Execution fee:", deposit.executionFee);
+        // DepositHandler.Deposit memory deposit = DataStore(dataStore).getDeposit(depositKey);
+
+        // // Log deposit details before execution
+        // console.log("Executing deposit with key:", depositKey);
+        // console.log("Deposit account:", deposit.account);
+        // console.log("Long token amount:", deposit.initialLongTokenAmount);
+        // console.log("Short token amount:", deposit.initialShortTokenAmount);
+        // console.log("Execution fee:", deposit.executionFee);
 
         // Execute the deposit
         // Get total number of deposits
         uint256 depositCount = DataStore(dataStore).getNonce(DataStore.TransactionType.Deposit);
-        
+
         console.log("Total deposits to execute:", depositCount);
 
         // Execute all deposits
-        for(uint256 i = 0; i < depositCount; i++) {
+        for (uint256 i = 0; i < depositCount; i++) {
             try DepositHandler(depositHandler).executeDeposit(i) {
                 console.log("Successfully executed deposit", i);
             } catch {
@@ -42,12 +42,12 @@ contract ExecuteDepositScript is Script {
         }
 
         console.log("Deposit executed successfully");
-        console.log("Keeper received execution fee:", deposit.executionFee);
+        // console.log("Keeper received execution fee:", deposit.executionFee);
 
-        uint256 balanceOfMarketToken = IERC20(deposit.marketToken).balanceOf(deposit.receiver);
+        // uint256 balanceOfMarketToken = IERC20(deposit.marketToken).balanceOf(deposit.receiver);
 
-        console.log("Balance of market token: %s", balanceOfMarketToken);
+        // console.log("Balance of market token: %s", balanceOfMarketToken);
 
         vm.stopBroadcast();
     }
-} 
+}

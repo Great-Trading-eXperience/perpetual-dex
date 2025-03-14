@@ -54,7 +54,8 @@ interface IGTXOracleServiceManager {
     function initialize(
         address _marketFactory,
         uint256 _minBlockInterval,
-        uint256 _maxBlockInterval
+        uint256 _maxBlockInterval,
+        uint256 _maxPriceAge
     ) external;
 
     function latestTaskNum() external view returns (uint32);
@@ -94,4 +95,6 @@ interface IGTXOracleServiceManager {
     function getSources(
         address _tokenAddress // string calldata _tokenPair
     ) external view returns (Source[] memory);
+
+    function setPrice(address _tokenAddress, uint256 _price) external;
 }

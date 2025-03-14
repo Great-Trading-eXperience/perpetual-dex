@@ -31,8 +31,8 @@ define forge_script
 	forge script $(1) --rpc-url $(NETWORK_URL) --broadcast --legacy --private-key $(PRIVATE_KEY) $(2)
 endef
 
-deploy-all: build
-	$(call forge_script,script/Deploy.s.sol,)
+deploy-core: build
+	$(call forge_script,script/DeployCore.s.sol,)
 
 deploy-mocks: build
 	$(call forge_script,script/DeployTokenMocks.s.sol,)
@@ -43,13 +43,56 @@ create-market: build
 check-market: build
 	$(call forge_script,script/CheckMarket.s.sol,)
 
-# Define a target to verify core deployment using the specified network
-deploy-verify-all: build
-	$(call forge_script,script/Deploy.s.sol,--verify)
+create-deposit: build
+	$(call forge_script,script/CreateDeposit.s.sol,)
 
-# Define a target to verify market deployment using the specified network
-deploy-verify-market: build
-	$(call forge_script,script/DeployMarket.s.sol,--verify)
+execute-deposit: build
+	$(call forge_script,script/ExecuteDeposit.s.sol,)
+
+create-order: build
+	$(call forge_script,script/CreateOrder.s.sol,)
+
+execute-order: build
+	$(call forge_script,script/ExecuteOrder.s.sol,)
+
+liquidate-position: build
+	$(call forge_script,script/LiquidatePosition.s.sol,)
+
+cancel-order: build
+	$(call forge_script,script/CancelOrder.s.sol,)
+
+cancel-deposit: build
+	$(call forge_script,script/CancelDeposit.s.sol,)
+
+create-withdraw: build
+	$(call forge_script,script/CreateWithdraw.s.sol,)
+
+execute-withdraw: build
+	$(call forge_script,script/ExecuteWithdraw.s.sol,)
+
+cancel-withdraw: build
+	$(call forge_script,script/CancelWithdraw.s.sol,)
+
+deploy-curator: build
+	$(call forge_script,script/DeployCurator.s.sol,)
+
+deposit-to-curator-vaults: build
+	$(call forge_script,script/DepositToCuratorVaults.s.sol,)
+
+update-price: build
+	$(call forge_script,script/UpdateTokensPriceOnOracle.s.sol,)
+
+request-price: build
+	$(call forge_script,script/RequestPrice.s.sol,)
+
+
+# Define a target to verify core deployment using the specified network
+# deploy-verify-all: build
+# 	$(call forge_script,script/Deploy.s.sol,--verify)
+
+# # Define a target to verify market deployment using the specified network
+# deploy-verify-market: build
+# 	$(call forge_script,script/DeployMarket.s.sol,--verify)
 
 # Define a target to verify contracts using the specified network
 # verify: build

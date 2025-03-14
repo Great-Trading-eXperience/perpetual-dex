@@ -26,25 +26,25 @@ contract ExecuteOrderScript is Script {
         address[] memory tokens = new address[](2);
         tokens[0] = wnt;
         tokens[1] = usdc;
-        
-        uint256 wntPrice = 3000 * 1e18;  // $3000 per WNT
-        uint256 usdcPrice = 1 * 1e18;    // $1 per USDC
+
+        uint256 wntPrice = 3000 * 1e18; // $3000 per WNT
+        uint256 usdcPrice = 1 * 1e18; // $1 per USDC
 
         // Sign WNT price
         // Set prices in oracle
-        Oracle(oracle).setPrice(tokens[0], wntPrice);
-        Oracle(oracle).setPrice(tokens[1], usdcPrice);
+        // Oracle(oracle).setPrice(tokens[0], wntPrice);
+        // Oracle(oracle).setPrice(tokens[1], usdcPrice);
 
         // Get total number of orders
         uint256 orderCount = DataStore(dataStore).getNonce(DataStore.TransactionType.Order);
-        
+
         console.log("Total orders to execute:", orderCount);
 
         // Execute all orders
-        for(uint256 i = 0; i < orderCount; i++) {
+        for (uint256 i = 0; i < orderCount; i++) {
             // Get order details before execution
             OrderHandler.Order memory order = DataStore(dataStore).getOrder(i);
-            
+
             console.log("\nExecuting order with key:", i);
             console.log("Order account:", order.account);
             console.log("Order size delta USD:", order.sizeDeltaUsd);
@@ -59,14 +59,11 @@ contract ExecuteOrderScript is Script {
 
                 // Get position details after execution
                 bytes32 positionKey = keccak256(
-                    abi.encodePacked(
-                        order.account,
-                        order.marketToken,
-                        order.initialCollateralToken
-                    )
+                    abi.encodePacked(order.account, order.marketToken, order.initialCollateralToken)
                 );
-                PositionHandler.Position memory position = DataStore(dataStore).getPosition(positionKey);
-                
+                PositionHandler.Position memory position =
+                    DataStore(dataStore).getPosition(positionKey);
+
                 console.log("Position size in USD:", position.sizeInUsd);
                 console.log("Position collateral:", position.collateralAmount);
             } catch {

@@ -11,6 +11,7 @@ contract MockGTXOracleServiceManager is IGTXOracleServiceManager {
     address public marketFactory;
     uint256 public minBlockInterval;
     uint256 public maxBlockInterval;
+    uint256 public maxPriceAge;
 
     mapping(uint32 => bytes32) public allTaskHashes;
     mapping(address => mapping(uint32 => bytes)) public allTaskResponses;
@@ -96,12 +97,26 @@ contract MockGTXOracleServiceManager is IGTXOracleServiceManager {
     function initialize(
         address _marketFactory,
         uint256 _minBlockInterval,
-        uint256 _maxBlockInterval
+        uint256 _maxBlockInterval,
+        uint256 _maxPriceAge
     ) external {
         marketFactory = _marketFactory;
         minBlockInterval = _minBlockInterval;
         maxBlockInterval = _maxBlockInterval;
+        maxPriceAge = _maxPriceAge;
 
         emit Initialize(marketFactory);
+    }
+
+    function setPrice(address _tokenAddress, uint256 _price) external override {
+        prices[_tokenAddress] = Price({
+            value: _price,
+            timestamp: block.timestamp,
+            blockNumber: block.number,
+            minBlockInterval: 0,
+            maxBlockInterval: 0
+        });
+
+        emit OraclePriceUpdated(_tokenAddress, "", _price, block.timestamp);
     }
 }

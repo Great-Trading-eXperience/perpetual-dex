@@ -24,6 +24,7 @@ contract DeployCoreScript is Script {
         address wnt = vm.envAddress("WETH_ADDRESS");
         uint256 minBlockInterval = vm.envUint("MIN_BLOCK_INTERVAL");
         uint256 maxBlockInterval = vm.envUint("MAX_BLOCK_INTERVAL");
+        uint256 maxPriceAge = vm.envUint("MAX_PRICE_AGE");
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -40,7 +41,7 @@ contract DeployCoreScript is Script {
         // 2. Used for external oracle
         address oracleServiceManager = vm.envAddress("GTX_ORACLE_SERVICE_MANAGER_ADDRESS");
         IGTXOracleServiceManager(oracleServiceManager).initialize(
-            address(marketFactory), minBlockInterval, maxBlockInterval
+            address(marketFactory), minBlockInterval, maxBlockInterval, maxPriceAge
         );
         address oracle = oracleServiceManager;
 
@@ -75,10 +76,7 @@ contract DeployCoreScript is Script {
         );
 
         WithdrawHandler withdrawHandler = new WithdrawHandler(
-            address(dataStore),
-            address(withdrawVault),
-            address(marketHandler),
-            address(wnt)
+            address(dataStore), address(withdrawVault), address(marketHandler), address(wnt)
         );
 
         // Deploy router
@@ -96,10 +94,8 @@ contract DeployCoreScript is Script {
         // Deploy currator
         Curator curatorImplementation = new MockCurator();
         CuratorRegistry registry = new CuratorRegistry();
-        CuratorFactory factory = new CuratorFactory(
-            address(curatorImplementation),
-            address(registry)
-        );
+        CuratorFactory factory =
+            new CuratorFactory(address(curatorImplementation), address(registry));
         AssetVault assetVault = new AssetVault(
             address(router),
             address(dataStore),
@@ -135,7 +131,7 @@ contract DeployCoreScript is Script {
         console.log("CURATOR_REGISTRY_ADDRESS=%s", address(registry));
         console.log("CURATOR_FACTORY_ADDRESS=%s", address(factory));
         console.log("VAULT_FACTORY_ADDRESS=%s", address(vaultFactory));
-        
+
         vm.stopBroadcast();
     }
 }
