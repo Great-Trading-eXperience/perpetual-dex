@@ -83,9 +83,10 @@ GTX Perpetual consists of multiple components that enable a permissionless perpe
    🔗 **Repo:** [Perpetual DEX](https://github.com/Great-Trading-eXperience/perpetual-dex)
 
 2. **Oracle AVS**  
-   Securely fetches off-chain data using zkTLS and EigenLayer middleware, ensuring reliable mark prices for perpetual markets.  
-   🔗 **Repo:** [Oracle AVS](https://github.com/Great-Trading-eXperience/oracle-avs)
-   🔗 **Details:** [Oracle AVS README](https://github.com/Great-Trading-eXperience/oracle-avs/blob/main/README.md)
+   Securely fetches off-chain data using zkTLS and EigenLayer middleware, ensuring reliable mark prices for perpetual markets.
+
+   🔗 **Repo:** [Oracle AVS](https://github.com/Great-Trading-eXperience/oracle-avs)  
+    🔗 **Details:** [Oracle AVS README](https://github.com/Great-Trading-eXperience/oracle-avs/blob/main/README.md)
 
 3. **Perpetual Indexer**  
    Indexing service that processes and structures blockchain data for efficient market analytics and historical data queries.  
